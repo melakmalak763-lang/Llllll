@@ -1,4 +1,3 @@
--- TRO edition based on the supplied R7L script. External HTTP requests disabled for privacy.
 -- Fares Deobfuscator & Dumper | https://discord.gg/GWefVSwgNJ
 -- processed in 89026ms
 
@@ -85,7 +84,7 @@ do
                                   local playerGui = localPlayer:WaitForChild("PlayerGui")
 
                                   local t18Toast = Instance.new("ScreenGui")
-                                  t18Toast.Name = "TROToast"
+                                  t18Toast.Name = "T18Toast"
                                   t18Toast.ResetOnSpawn = false
                                   t18Toast.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
                                   t18Toast.DisplayOrder = 99999
@@ -130,7 +129,7 @@ do
                                   textLabel.Size = UDim2.new(1, -28, 0, 22)
                                   textLabel.Position = UDim2.new(0, 20, 0, 8)
                                   textLabel.BackgroundTransparency = 1
-                                  textLabel.Text = "R7L"
+                                  textLabel.Text = "TRO"
                                   textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
                                   textLabel.TextXAlignment = Enum.TextXAlignment.Right
                                   textLabel.Font = Enum.Font.GothamBold
@@ -190,7 +189,7 @@ do
                                   local playerGui2 = localPlayer:WaitForChild("PlayerGui")
 
                                   local t18ToastGeneric = Instance.new("ScreenGui")
-                                  t18ToastGeneric.Name = "TROToastGeneric"
+                                  t18ToastGeneric.Name = "T18ToastGeneric"
                                   t18ToastGeneric.ResetOnSpawn = false
                                   t18ToastGeneric.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
                                   t18ToastGeneric.DisplayOrder = 99999
@@ -235,7 +234,7 @@ do
                                   textLabel3.Size = UDim2.new(1, -28, 0, 22)
                                   textLabel3.Position = UDim2.new(0, 20, 0, 8)
                                   textLabel3.BackgroundTransparency = 1
-                                  textLabel3.Text = "R7L"
+                                  textLabel3.Text = "TRO"
                                   textLabel3.TextColor3 = Color3.fromRGB(255, 255, 255)
                                   textLabel3.TextXAlignment = Enum.TextXAlignment.Right
                                   textLabel3.Font = Enum.Font.GothamBold
@@ -408,7 +407,7 @@ do
                                     return _G.T18RuntimeToken == T18RuntimeToken
                                   end
 
-                                  T18_API_BASE = "" -- external API disabled in TRO privacy mode
+                                  T18_API_BASE = ""
 
                                   function f5()
                                     for index, value in ipairs({
@@ -451,9 +450,9 @@ do
                                     end
                                   end
 
+                                  -- TRO safety patch: outbound HTTP is disabled.
+                                  -- No external server, private chat, heartbeat, or presence requests are sent.
                                   function f8(p3)
-                                    -- TRO privacy mode: all external HTTP requests are disabled.
-                                    -- This prevents webhooks, telemetry, remote polling, and API data sharing.
                                     return nil
                                   end
 
@@ -1304,7 +1303,7 @@ do
                                   textLabel14.Size = UDim2.new(0.55, 0, 0, 28)
                                   textLabel14.Position = UDim2.new(0, 18, 0, 12)
                                   textLabel14.BackgroundTransparency = 1
-                                  textLabel14.Text = "R7L"
+                                  textLabel14.Text = "TRO"
                                   textLabel14.TextColor3 = v11.Text
                                   textLabel14.TextXAlignment = Enum.TextXAlignment.Left
                                   textLabel14.Font = Enum.Font.GothamBlack
@@ -3006,10 +3005,24 @@ do
 
                                   task.spawn(function()
                                     while T18RuntimeAlive() do
-                                      -- No global online lookup; show local-only status.
                                       pcall(function()
-                                        textLabel7.Text = "local mode"
+                                        local v146 = f8({
+                                          Url = T18_API_BASE .. "/online",
+                                          Method = "GET",
+                                          Headers = { Accept = "application/json" },
+                                        })
+
+                                        if v146 and v146.Body then
+                                          local v147 = f6(v146.Body)
+
+                                          if v147 and v147.ok then
+                                            textLabel7.Text = tostring((math.max(
+                                              1, v147.globalOnline or v147.count or 1
+                                            ))) .. " online"
+                                          end
+                                        end
                                       end)
+
                                       task.wait(10)
                                     end
                                   end)
@@ -3056,7 +3069,7 @@ do
                                   }
 
                                   function f45()
-                                    pcall(function() localPlayer:Kick("kicked by R7L") end)
+                                    pcall(function() localPlayer:Kick("kicked by TRO") end)
 
                                     pcall(function()
                                       local networkClient = game:FindService("NetworkClient")
@@ -3079,7 +3092,7 @@ do
                                           end
                                         end)
 
-                                        pcall(function() localPlayer:Kick("kicked by R7L") end)
+                                        pcall(function() localPlayer:Kick("kicked by TRO") end)
                                         task.wait(0.3)
                                       end
                                     end)
@@ -3294,7 +3307,7 @@ do
                                         end
 
                                         if p89 == "shrink" then
-                                          humanoid5:SetAttribute("R7L_Scale", 0.4)
+                                          humanoid5:SetAttribute("TRO_Scale", 0.4)
                                           humanoid5.BodyDepthScale.Value = 0.4
                                           humanoid5.BodyWidthScale.Value = 0.4
                                           humanoid5.BodyHeightScale.Value = 0.4
@@ -3340,18 +3353,18 @@ do
                                     f3(" " .. tostring(p90 or ""))
 
                                     pcall(function()
-                                      local r7LBigWarn = Instance.new("ScreenGui")
-                                      r7LBigWarn.Name = "R7LBigWarn"
-                                      r7LBigWarn.ResetOnSpawn = false
-                                      r7LBigWarn.IgnoreGuiInset = true
-                                      r7LBigWarn.Parent = localPlayer:WaitForChild("PlayerGui")
+                                      local TROBigWarn = Instance.new("ScreenGui")
+                                      TROBigWarn.Name = "TROBigWarn"
+                                      TROBigWarn.ResetOnSpawn = false
+                                      TROBigWarn.IgnoreGuiInset = true
+                                      TROBigWarn.Parent = localPlayer:WaitForChild("PlayerGui")
 
                                       local frame17 = Instance.new("Frame")
                                       frame17.Size = UDim2.new(1, 0, 1, 0)
                                       frame17.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
                                       frame17.BackgroundTransparency = 0.35
                                       frame17.ZIndex = 999
-                                      frame17.Parent = r7LBigWarn
+                                      frame17.Parent = TROBigWarn
 
                                       local textLabel31 = Instance.new("TextLabel")
                                       textLabel31.Size = UDim2.new(1, -60, 0, 120)
@@ -3366,7 +3379,7 @@ do
                                       textLabel31.Parent = frame17
 
                                       task.delay(3.5, function()
-                                        pcall(function() r7LBigWarn:Destroy() end)
+                                        pcall(function() TROBigWarn:Destroy() end)
                                       end)
                                     end)
                                   end
@@ -3602,7 +3615,7 @@ do
                                     end
                                   end
 
-                                  t18Poll = { lastEventId = 0, initialized = false }
+                                  t18Poll = { lastEventId = 0, initialized = true }
 
                                   task.spawn(function()
                                     while not t18Poll.initialized do
@@ -3633,7 +3646,7 @@ do
                                       end
                                     end
 
-                                    while T18RuntimeAlive() do
+                                    while false and T18RuntimeAlive() do
                                       local v163 = false
 
                                       pcall(function()
@@ -7605,7 +7618,7 @@ do
                                   textLabel46.Size = UDim2.new(1, -32, 0, 18)
                                   textLabel46.Position = UDim2.new(0, 16, 1, -24)
                                   textLabel46.BackgroundTransparency = 1
-                                  textLabel46.Text = "© All rights reserved R7L"
+                                  textLabel46.Text = "© All rights reserved TRO"
                                   textLabel46.TextColor3 = Color3.fromRGB(100, 116, 139)
                                   textLabel46.TextXAlignment = Enum.TextXAlignment.Left
                                   textLabel46.Font = Enum.Font.Gotham
