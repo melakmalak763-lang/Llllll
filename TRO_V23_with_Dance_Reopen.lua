@@ -1336,13 +1336,11 @@ Players.PlayerRemoving:Connect(updateSpamList)
 
 -- ========== TARGET PAGE ==========
 -- ═══════════════════════════════════════════════════════════════════
--- 🎯 TARGET SYSTEM — COMPLETE
+-- 🎯 TARGET SYSTEM — COMPLETE & FIXED
 -- ═══════════════════════════════════════════════════════════════════
 local CurrentTarget = nil
 local FlingOriginalPos = nil
 local TalkRepeater = nil
-local TargetConnections = {}   -- لفصل الاتصالات بأمان
-local ActiveThreads = {}       -- لإلغاء الحلقات عند الإيقاف
 
 -- ─── Helpers ───
 local function GetLocalChar()
@@ -1393,9 +1391,9 @@ local function playAnimById(id, speed, timePos)
     end)
 end
 
--- ─── UI: العنوان والصورة وحقل البحث ───
+-- ─── UI ───
 do
-    local tT = Instance.new("TextLabel", tgtP)
+    local tT = Instance.new("TextLabel", pageTarget)
     tT.Size = UDim2.new(0.9, 0, 0, 30)
     tT.Position = UDim2.new(0.04, 0, 0, 10)
     tT.BackgroundTransparency = 1
@@ -1406,7 +1404,7 @@ do
     tT.TextXAlignment = Enum.TextXAlignment.Left
     tT.ZIndex = 4
 
-    local targetImg = Instance.new("ImageLabel", tgtP)
+    local targetImg = Instance.new("ImageLabel", pageTarget)
     targetImg.Size = UDim2.new(0, 85, 0, 85)
     targetImg.Position = UDim2.new(0.04, 0, 0, 45)
     targetImg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -1415,7 +1413,7 @@ do
     targetImg.ZIndex = 4
     Instance.new("UICorner", targetImg).CornerRadius = UDim.new(0, 8)
 
-    local tInp = Instance.new("TextBox", tgtP)
+    local tInp = Instance.new("TextBox", pageTarget)
     tInp.Size = UDim2.new(0, 175, 0, 30)
     tInp.Position = UDim2.new(0.28, 0, 0, 45)
     tInp.PlaceholderText = "@target..."
@@ -1428,7 +1426,7 @@ do
     tInp.ZIndex = 5
     Instance.new("UICorner", tInp).CornerRadius = UDim.new(0, 6)
 
-    local clickTgtBtn = Instance.new("TextButton", tgtP)
+    local clickTgtBtn = Instance.new("TextButton", pageTarget)
     clickTgtBtn.Size = UDim2.new(0, 30, 0, 30)
     clickTgtBtn.Position = UDim2.new(0.77, 0, 0, 45)
     clickTgtBtn.Text = "🎯"
@@ -1439,7 +1437,7 @@ do
     clickTgtBtn.ZIndex = 10
     Instance.new("UICorner", clickTgtBtn).CornerRadius = UDim.new(0, 6)
 
-    local infoL = Instance.new("TextLabel", tgtP)
+    local infoL = Instance.new("TextLabel", pageTarget)
     infoL.Size = UDim2.new(0, 180, 0, 65)
     infoL.Position = UDim2.new(0.28, 0, 0, 78)
     infoL.BackgroundTransparency = 1
@@ -1458,7 +1456,7 @@ do
             infoL.Text = "UserID: ---\nDisplay: ---\nJoined: ---"
             targetImg.Image = "rbxassetid://10818605405"
             CurrentTarget = nil
-            for _, btn in ipairs(tgtP:GetChildren()) do
+            for _, btn in ipairs(pageTarget:GetChildren()) do
                 if btn:IsA("TextButton") then
                     local tkt = btn:FindFirstChild("Ticket_Asset")
                     if tkt and tkt:IsA("ImageLabel") then
@@ -1486,16 +1484,16 @@ do
         infoL.Text = "UserID: " .. secondaryPlayer.UserId ..
                      "\nDisplay: @" .. secondaryPlayer.DisplayName ..
                      "\nJoined: " .. age
-        sendNotify("Target", "✅ تم تحديد: " .. secondaryPlayer.Name)
+        notify("Target", "✅ تم تحديد: " .. secondaryPlayer.Name)
         if TalkRepeater then
             pcall(function() TalkRepeater:Disconnect() end)
             TalkRepeater = nil
         end
     end
 
-    -- ─── الزر الموحد مع مؤشر الحالة ───
+    -- ─── Action button factory ───
     local function makeActionButton(text, x, y)
-        local b = Instance.new("TextButton", tgtP)
+        local b = Instance.new("TextButton", pageTarget)
         b.Size = UDim2.new(0, 175, 0, 32)
         b.Position = UDim2.new(0, x, 0, y)
         b.BackgroundColor3 = Color3.fromRGB(10, 22, 14)
@@ -1537,7 +1535,7 @@ do
         return tkt and tkt.ImageColor3 == Color3.fromRGB(0, 255, 0)
     end
 
-    -- ─── جميع الأزرار (14 زر) ───
+    -- ─── 14 أزرار ───
     local flingBtn    = makeActionButton("فلنق (Fling)",       15,  155)
     local viewBtn     = makeActionButton("مشاهدة (View)",      205, 155)
     local bangRevBtn  = makeActionButton("بانق عكسي (Reverse)",15,  195)
@@ -1555,17 +1553,17 @@ do
 
     -- ═══ 1. فلنق ═══
     flingBtn.MouseButton1Click:Connect(function()
-        if not CurrentTarget then sendNotify("Target", "❌ حدد ضحية أولاً!") return end
+        if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
         toggleColor(flingBtn)
         if isActive(flingBtn) then
             local mH = GetLocalRoot()
             FlingOriginalPos = mH and mH.CFrame or nil
-            sendNotify("Fling", "🚀 بدء الفلنق...")
+            notify("Fling", "🚀 بدء الفلنق...")
             task.spawn(function()
                 local origFPDH = workspace.FallenPartsDestroyHeight
                 pcall(function() workspace.FallenPartsDestroyHeight = -math.huge end)
                 while isActive(flingBtn) do
-                    Run.Heartbeat:Wait()
+                    RunService.Heartbeat:Wait()
                     local tH = GetTargetRoot()
                     local mH2 = GetLocalRoot()
                     local mHum = GetLocalHum()
@@ -1609,12 +1607,12 @@ do
 
     -- ═══ 2. مشاهدة ═══
     viewBtn.MouseButton1Click:Connect(function()
-        if not CurrentTarget then sendNotify("Target", "❌ حدد ضحية أولاً!") return end
+        if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
         toggleColor(viewBtn)
         if isActive(viewBtn) then
             task.spawn(function()
                 while isActive(viewBtn) do
-                    Run.Heartbeat:Wait()
+                    RunService.Heartbeat:Wait()
                     local tHum = GetTargetHum()
                     if tHum then
                         workspace.CurrentCamera.CameraSubject = tHum
@@ -1633,13 +1631,13 @@ do
 
     -- ═══ 3. بانق عكسي ═══
     bangRevBtn.MouseButton1Click:Connect(function()
-        if not CurrentTarget then sendNotify("Target", "❌ حدد ضحية أولاً!") return end
+        if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
         toggleColor(bangRevBtn)
         if isActive(bangRevBtn) then
             task.spawn(function()
                 local sum, step, yOffset = -2, 0.15, -1
                 while isActive(bangRevBtn) do
-                    Run.Heartbeat:Wait()
+                    RunService.Heartbeat:Wait()
                     local tChar = GetTargetChar()
                     local mH = GetLocalRoot()
                     local mHum = GetLocalHum()
@@ -1665,12 +1663,12 @@ do
 
     -- ═══ 4. بانق ═══
     bangBtn.MouseButton1Click:Connect(function()
-        if not CurrentTarget then sendNotify("Target", "❌ حدد ضحية أولاً!") return end
+        if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
         toggleColor(bangBtn)
         if isActive(bangBtn) then
             task.spawn(function()
                 while isActive(bangBtn) do
-                    Run.Heartbeat:Wait()
+                    RunService.Heartbeat:Wait()
                     local tChar = GetTargetChar()
                     local mH = GetLocalRoot()
                     local mHum = GetLocalHum()
@@ -1698,12 +1696,12 @@ do
 
     -- ═══ 5. جلوس في راسه ═══
     headSitBtn.MouseButton1Click:Connect(function()
-        if not CurrentTarget then sendNotify("Target", "❌ حدد ضحية أولاً!") return end
+        if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
         toggleColor(headSitBtn)
         if isActive(headSitBtn) then
             task.spawn(function()
                 while isActive(headSitBtn) do
-                    Run.Heartbeat:Wait()
+                    RunService.Heartbeat:Wait()
                     local tChar = GetTargetChar()
                     local mH = GetLocalRoot()
                     local mHum = GetLocalHum()
@@ -1721,15 +1719,15 @@ do
         end
     end)
 
-    -- ═══ 6. تمص (Sucking) ═══
+    -- ═══ 6. تمص ═══
     suckingBtn.MouseButton1Click:Connect(function()
-        if not CurrentTarget then sendNotify("Target", "❌ حدد ضحية أولاً!") return end
+        if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
         toggleColor(suckingBtn)
         if isActive(suckingBtn) then
             task.spawn(function()
                 local sum, step = -2, 0.15
                 while isActive(suckingBtn) do
-                    Run.Heartbeat:Wait()
+                    RunService.Heartbeat:Wait()
                     local tChar = GetTargetChar()
                     local mH = GetLocalRoot()
                     local mHum = GetLocalHum()
@@ -1754,10 +1752,10 @@ do
 
     -- ═══ 7. ضرب مؤخرة ═══
     assSlapBtn.MouseButton1Click:Connect(function()
-        if not CurrentTarget then sendNotify("Target", "❌ حدد ضحية أولاً!") return end
+        if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
         local mHum = GetLocalHum()
         if not mHum or mHum.RigType ~= Enum.HumanoidRigType.R15 then
-            sendNotify("AssSlap", "يجب أن تكون R15")
+            notify("AssSlap", "يجب أن تكون R15")
             return
         end
         toggleColor(assSlapBtn)
@@ -1770,7 +1768,7 @@ do
             end)
             task.spawn(function()
                 while isActive(assSlapBtn) do
-                    Run.Heartbeat:Wait()
+                    RunService.Heartbeat:Wait()
                     local tChar = GetTargetChar()
                     local mH = GetLocalRoot()
                     local mHum2 = GetLocalHum()
@@ -1791,9 +1789,9 @@ do
         end
     end)
 
-    -- ═══ 8. يمص (HeadFuck) ═══
+    -- ═══ 8. يمص ═══
     headFuckBtn.MouseButton1Click:Connect(function()
-        if not CurrentTarget then sendNotify("Target", "❌ حدد ضحية أولاً!") return end
+        if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
         toggleColor(headFuckBtn)
         if isActive(headFuckBtn) then
             task.spawn(function()
@@ -1821,12 +1819,12 @@ do
 
     -- ═══ 9. حقيبة ظهر ═══
     backpackBtn.MouseButton1Click:Connect(function()
-        if not CurrentTarget then sendNotify("Target", "❌ حدد ضحية أولاً!") return end
+        if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
         toggleColor(backpackBtn)
         if isActive(backpackBtn) then
             task.spawn(function()
                 while isActive(backpackBtn) do
-                    Run.Heartbeat:Wait()
+                    RunService.Heartbeat:Wait()
                     local tH = GetTargetRoot()
                     local mH = GetLocalRoot()
                     local mHum = GetLocalHum()
@@ -1846,7 +1844,7 @@ do
 
     -- ═══ 10. سوها عليه ═══
     jerkBtn.MouseButton1Click:Connect(function()
-        if not CurrentTarget then sendNotify("Target", "❌ حدد ضحية أولاً!") return end
+        if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
         toggleColor(jerkBtn)
         if isActive(jerkBtn) then
             task.spawn(function()
@@ -1863,7 +1861,7 @@ do
             end)
             task.spawn(function()
                 while isActive(jerkBtn) do
-                    Run.Heartbeat:Wait()
+                    RunService.Heartbeat:Wait()
                     local tH = GetTargetRoot()
                     local mH = GetLocalRoot()
                     local mHum = GetLocalHum()
@@ -1881,16 +1879,16 @@ do
         end
     end)
 
-    -- ═══ 11. سماع (Focus) ═══
+    -- ═══ 11. سماع ═══
     focusBtn.MouseButton1Click:Connect(function()
-        if not CurrentTarget then sendNotify("Target", "❌ حدد ضحية أولاً!") return end
+        if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
         toggleColor(focusBtn)
         if isActive(focusBtn) then
             local mH0 = GetLocalRoot()
             local oldPos = mH0 and mH0.Position or nil
             task.spawn(function()
                 while isActive(focusBtn) do
-                    Run.Heartbeat:Wait()
+                    RunService.Heartbeat:Wait()
                     local tChar = GetTargetChar()
                     local mH = GetLocalRoot()
                     if tChar and tChar:FindFirstChild("Head") and mH then
@@ -1914,14 +1912,14 @@ do
 
     -- ═══ 12. تقليد الكلام ═══
     repeatBtn.MouseButton1Click:Connect(function()
-        if not CurrentTarget then sendNotify("Target", "❌ حدد ضحية أولاً!") return end
+        if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
         toggleColor(repeatBtn)
         if isActive(repeatBtn) then
             if TalkRepeater then pcall(function() TalkRepeater:Disconnect() end) end
             local targetUserId = CurrentTarget.UserId
             TalkRepeater = game:GetService("TextChatService").MessageReceived:Connect(function(msg)
                 if msg.TextSource and msg.TextSource.UserId == targetUserId then
-                    sendText(msg.Text)
+                    sendChatText(msg.Text)
                 end
             end)
         else
@@ -1932,16 +1930,16 @@ do
         end
     end)
 
-    -- ═══ 13. تنقل (Teleport) ═══
+    -- ═══ 13. تنقل ═══
     tpBtn.MouseButton1Click:Connect(function()
-        if not CurrentTarget then sendNotify("Target", "❌ حدد ضحية أولاً!") return end
+        if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
         local mH = GetLocalRoot()
         local tH = GetTargetRoot()
         if mH and tH then
             pcall(function() mH.CFrame = tH.CFrame end)
-            sendNotify("Target", "✅ تم التنقل")
+            notify("Target", "✅ تم التنقل")
         else
-            sendNotify("Target", "❌ لا يمكن التنقل الآن")
+            notify("Target", "❌ لا يمكن التنقل الآن")
         end
     end)
 
@@ -1976,13 +1974,13 @@ do
             end)
             tool.Parent = bp or player
         end)
-        sendNotify("ClickTarget", "✅ أضفنا أداة الاختيار في الحقيبة")
+        notify("ClickTarget", "✅ أضفنا أداة الاختيار في الحقيبة")
     end
 
     clickToolBtn.MouseButton1Click:Connect(addClickTool)
     clickTgtBtn.MouseButton1Click:Connect(addClickTool)
 
-    -- ─── البحث بالنص ───
+    -- ─── البحث ───
     tInp.FocusLost:Connect(function(enterPressed)
         if enterPressed then
             local q = tInp.Text:gsub("^%s+", ""):gsub("%s+$", "")
@@ -2001,30 +1999,26 @@ do
             if found then
                 UpdateTarget(found)
             else
-                sendNotify("Target", "❌ لم يتم العثور على اللاعب")
+                notify("Target", "❌ لم يتم العثور على اللاعب")
             end
         end
     end)
 
-    -- ─── إزالة الهدف عند خروجه ───
+    -- ─── خروج الهدف ───
     Players.PlayerRemoving:Connect(function(p)
         if CurrentTarget and p == CurrentTarget then
-            sendNotify("Target", "🚪 الضحية خرجت من السيرفر")
+            notify("Target", "🚪 الضحية خرجت من السيرفر")
             UpdateTarget(nil)
         end
     end)
 
-    -- ─── تنظيف عند إغلاق الـ GUI ───
+    -- ─── تنظيف ───
     if gui and gui.Destroying then
         gui.Destroying:Connect(function()
             if TalkRepeater then pcall(function() TalkRepeater:Disconnect() end) end
-            for _, c in ipairs(TargetConnections) do
-                pcall(function() c:Disconnect() end)
-            end
         end)
     end
 end
-
 -- ========== TRO ANTI LAUNCHER ==========
 local troAntiLoaded = false
 local playerGui = player:FindFirstChildOfClass("PlayerGui") or player:WaitForChild("PlayerGui")
