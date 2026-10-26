@@ -4846,7 +4846,926 @@ local chatEncryptionBtn = mkBtn(pageTools, "🔤 تشفير كلام", UDim2.new
     acLog("⛔ OFF — تعطيل تلقائي لتشغيل تشفير الكلام")
     runToolSource(chatEncryptionSource, "تشفير كلام")
 end)
-chatEncryptionBtn.BackgroundColor3 = C_BTN_ACTIVE
+chatEncryptionBtn.BackgroundColor3 = C_BTN_ACTIVE 
+-- ============================================================
+-- 🚀 TRO FLING PRO (30 تقنية) — مع أيقونة فتح/غلق
+-- ============================================================
+local flingProSource = [====[
+local PS = game:GetService("Players")
+local RS = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local LP = PS.LocalPlayer
+local PG = LP:WaitForChild("PlayerGui")
+if PG:FindFirstChild("TF") then PG.TF:Destroy() end
+local vp = workspace.CurrentCamera.ViewportSize
+
+local sg = Instance.new("ScreenGui")
+sg.Name = "TF"; sg.ResetOnSpawn = false; sg.IgnoreGuiInset = true; sg.Parent = PG
+
+-- ═══ Main ═══
+local m = Instance.new("Frame", sg)
+m.Size = UDim2.fromOffset(400, 680)
+m.Position = UDim2.fromOffset(vp.X/2-200, vp.Y/2-340)
+m.BackgroundColor3 = Color3.new(0,0,0)
+m.BorderSizePixel = 0
+m.ClipsDescendants = true
+Instance.new("UICorner", m).CornerRadius = UDim.new(0,16)
+local ms = Instance.new("UIStroke", m)
+ms.Color = Color3.new(1,1,1); ms.Thickness = 1.5; ms.Transparency = 0.4
+
+-- ═══ Stars ═══
+local starLayer = Instance.new("Frame", m)
+starLayer.Size = UDim2.fromScale(1,1)
+starLayer.BackgroundTransparency = 1
+starLayer.ZIndex = 1
+starLayer.ClipsDescendants = true
+local rng = Random.new()
+local stars = {}
+for i = 1, 60 do
+    local s = Instance.new("Frame", starLayer)
+    local sz = (i % 11 == 0) and 3 or rng:NextInteger(1,2)
+    s.Size = UDim2.fromOffset(sz, sz)
+    s.Position = UDim2.fromScale(rng:NextNumber(0.02, 0.98), rng:NextNumber(0.02, 0.98))
+    s.BackgroundColor3 = Color3.new(1,1,1)
+    s.BackgroundTransparency = rng:NextNumber(0.1, 0.6)
+    s.BorderSizePixel = 0
+    s.ZIndex = 1
+    Instance.new("UICorner", s).CornerRadius = UDim.new(1,0)
+    table.insert(stars, {f=s, b=s.BackgroundTransparency, ph=rng:NextNumber(0, 6.28), sp=rng:NextNumber(0.5, 1.8), a=rng:NextNumber(0.2, 0.5)})
+end
+
+-- ═══ Shooting stars ═══
+local shooting = {}
+for i = 1, 3 do
+    local s = Instance.new("Frame", starLayer)
+    s.Size = UDim2.fromOffset(60, 1.5)
+    s.Position = UDim2.fromScale(1.15, 0.2)
+    s.BackgroundColor3 = Color3.fromRGB(220,220,230)
+    s.BackgroundTransparency = 1
+    s.BorderSizePixel = 0
+    s.Rotation = 20
+    s.ZIndex = 1
+    Instance.new("UICorner", s).CornerRadius = UDim.new(1,0)
+    local grad = Instance.new("UIGradient", s)
+    grad.Color = ColorSequence.new(Color3.new(1,1,1), Color3.fromRGB(120,120,140))
+    grad.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0,0), NumberSequenceKeypoint.new(1,1)})
+    table.insert(shooting, {f=s, delay=(i-1)*4})
+end
+
+-- ═══ Header ═══
+local header = Instance.new("Frame", m)
+header.Size = UDim2.new(1,0,0,55)
+header.BackgroundColor3 = Color3.fromRGB(10,10,10)
+header.BackgroundTransparency = 0.3
+header.BorderSizePixel = 0
+header.ZIndex = 5
+Instance.new("UICorner", header).CornerRadius = UDim.new(0,16)
+local hFill = Instance.new("Frame", header)
+hFill.Size = UDim2.new(1,0,0,27)
+hFill.Position = UDim2.new(0,0,1,-27)
+hFill.BackgroundColor3 = Color3.fromRGB(10,10,10)
+hFill.BackgroundTransparency = 0.3
+hFill.BorderSizePixel = 0
+hFill.ZIndex = 5
+
+local hIcon = Instance.new("TextLabel", header)
+hIcon.Size = UDim2.fromOffset(30,30)
+hIcon.Position = UDim2.fromOffset(15,12)
+hIcon.BackgroundTransparency = 1
+hIcon.Text = "🚀"; hIcon.TextSize = 20; hIcon.Font = Enum.Font.GothamBlack
+hIcon.ZIndex = 6
+
+local hTitle = Instance.new("TextLabel", header)
+hTitle.Size = UDim2.new(1,-100,0,22)
+hTitle.Position = UDim2.fromOffset(50,8)
+hTitle.BackgroundTransparency = 1
+hTitle.Text = "TRO FLING PRO"
+hTitle.TextColor3 = Color3.new(1,1,1)
+hTitle.Font = Enum.Font.GothamBlack; hTitle.TextSize = 14
+hTitle.TextXAlignment = Enum.TextXAlignment.Left
+hTitle.ZIndex = 6
+
+local hSub = Instance.new("TextLabel", header)
+hSub.Size = UDim2.new(1,-100,0,14)
+hSub.Position = UDim2.fromOffset(50,30)
+hSub.BackgroundTransparency = 1
+hSub.Text = "BYPASS NOCLIP + NO-COLLISION"
+hSub.TextColor3 = Color3.fromRGB(150,150,150)
+hSub.Font = Enum.Font.Code; hSub.TextSize = 8
+hSub.TextXAlignment = Enum.TextXAlignment.Left
+hSub.ZIndex = 6
+
+-- ═══════════════════════════════════════════════════════════
+-- Forward declaration for iconToggle
+-- ═══════════════════════════════════════════════════════════
+local iconToggle
+
+local closeBtn = Instance.new("TextButton", header)
+closeBtn.Size = UDim2.fromOffset(32,32)
+closeBtn.Position = UDim2.new(1,-42,0,11)
+closeBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
+closeBtn.Text = "✕"; closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.Font = Enum.Font.GothamBold; closeBtn.TextSize = 13
+closeBtn.AutoButtonColor = false; closeBtn.ZIndex = 6
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,8)
+closeBtn.MouseButton1Click:Connect(function()
+    m.Visible = false
+    if iconToggle then iconToggle.Visible = true end
+end)
+
+-- Drag
+local dr, ds, sp
+header.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        dr = true; ds = i.Position; sp = m.Position
+    end
+end)
+UIS.InputChanged:Connect(function(i)
+    if dr and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+        local d = i.Position - ds
+        m.Position = UDim2.fromOffset(sp.X.Offset + d.X, sp.Y.Offset + d.Y)
+    end
+end)
+UIS.InputEnded:Connect(function() dr = false end)
+
+-- ═══ Target Box ═══
+local targetBox = Instance.new("Frame", m)
+targetBox.Size = UDim2.new(1,-30,0,58)
+targetBox.Position = UDim2.fromOffset(15,65)
+targetBox.BackgroundColor3 = Color3.fromRGB(12,12,12)
+targetBox.BackgroundTransparency = 0.15
+targetBox.BorderSizePixel = 0
+targetBox.ZIndex = 3
+Instance.new("UICorner", targetBox).CornerRadius = UDim.new(0,10)
+local tbS = Instance.new("UIStroke", targetBox)
+tbS.Color = Color3.new(1,1,1); tbS.Thickness = 1; tbS.Transparency = 0.7
+
+local tTitle = Instance.new("TextLabel", targetBox)
+tTitle.Size = UDim2.new(1,-20,0,18)
+tTitle.Position = UDim2.fromOffset(10,5)
+tTitle.BackgroundTransparency = 1
+tTitle.Text = "🎯 الهدف"
+tTitle.TextColor3 = Color3.fromRGB(180,180,180)
+tTitle.Font = Enum.Font.GothamBold; tTitle.TextSize = 10
+tTitle.TextXAlignment = Enum.TextXAlignment.Left
+tTitle.ZIndex = 4
+
+local tl = Instance.new("TextLabel", targetBox)
+tl.Size = UDim2.new(1,-100,0,28)
+tl.Position = UDim2.fromOffset(10,24)
+tl.BackgroundTransparency = 1
+tl.Text = "لم يتم تحديد هدف"
+tl.TextColor3 = Color3.new(1,1,1)
+tl.Font = Enum.Font.GothamBold; tl.TextSize = 13
+tl.TextXAlignment = Enum.TextXAlignment.Left
+tl.ZIndex = 4
+
+local nearestBtn = Instance.new("TextButton", targetBox)
+nearestBtn.Size = UDim2.fromOffset(80,28)
+nearestBtn.Position = UDim2.new(1,-90,0,24)
+nearestBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+nearestBtn.Text = "أقرب لاعب"
+nearestBtn.TextColor3 = Color3.new(1,1,1)
+nearestBtn.Font = Enum.Font.GothamBold; nearestBtn.TextSize = 9
+nearestBtn.AutoButtonColor = false; nearestBtn.ZIndex = 4
+Instance.new("UICorner", nearestBtn).CornerRadius = UDim.new(0,6)
+
+-- ═══ Player List ═══
+local pl = Instance.new("ScrollingFrame", m)
+pl.Size = UDim2.new(1,-30,0,68)
+pl.Position = UDim2.fromOffset(15,130)
+pl.BackgroundColor3 = Color3.fromRGB(8,8,8)
+pl.BackgroundTransparency = 0.15
+pl.BorderSizePixel = 0
+pl.ScrollBarThickness = 3
+pl.ScrollBarImageColor3 = Color3.new(1,1,1)
+pl.CanvasSize = UDim2.new(0,0,0,0)
+pl.ZIndex = 3
+Instance.new("UICorner", pl).CornerRadius = UDim.new(0,8)
+local pll = Instance.new("UIListLayout", pl)
+pll.Padding = UDim.new(0,3)
+pll:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    pl.CanvasSize = UDim2.new(0,0,0,pll.AbsoluteContentSize.Y+6)
+end)
+local p1 = Instance.new("UIPadding", pl); p1.PaddingTop = UDim.new(0,3); p1.PaddingLeft = UDim.new(0,3); p1.PaddingRight = UDim.new(0,3)
+
+-- ═══ Methods Title ═══
+local mTitle = Instance.new("TextLabel", m)
+mTitle.Size = UDim2.new(1,-30,0,16)
+mTitle.Position = UDim2.fromOffset(15,206)
+mTitle.BackgroundTransparency = 1
+mTitle.Text = "🔧 طريقة الفلنق:"
+mTitle.TextColor3 = Color3.fromRGB(180,180,180)
+mTitle.Font = Enum.Font.GothamBold; mTitle.TextSize = 10
+mTitle.TextXAlignment = Enum.TextXAlignment.Left
+mTitle.ZIndex = 3
+
+-- ═══ Methods Scroll ═══
+local ms2 = Instance.new("ScrollingFrame", m)
+ms2.Size = UDim2.new(1,-30,0,250)
+ms2.Position = UDim2.fromOffset(15,224)
+ms2.BackgroundColor3 = Color3.fromRGB(8,8,8)
+ms2.BackgroundTransparency = 0.15
+ms2.BorderSizePixel = 0
+ms2.ScrollBarThickness = 3
+ms2.ScrollBarImageColor3 = Color3.new(1,1,1)
+ms2.CanvasSize = UDim2.new(0,0,0,0)
+ms2.ZIndex = 3
+Instance.new("UICorner", ms2).CornerRadius = UDim.new(0,8)
+local mll = Instance.new("UIListLayout", ms2)
+mll.Padding = UDim.new(0,3)
+mll:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ms2.CanvasSize = UDim2.new(0,0,0,mll.AbsoluteContentSize.Y+6)
+end)
+local p2 = Instance.new("UIPadding", ms2); p2.PaddingTop = UDim.new(0,3); p2.PaddingLeft = UDim.new(0,3); p2.PaddingRight = UDim.new(0,3)
+
+-- ═══ FLING + CONT ═══
+local flingBtn = Instance.new("TextButton", m)
+flingBtn.Size = UDim2.new(0.62,-15,0,45)
+flingBtn.Position = UDim2.fromOffset(15,486)
+flingBtn.BackgroundColor3 = Color3.new(1,1,1)
+flingBtn.Text = "🚀 FLING!"
+flingBtn.TextColor3 = Color3.new(0,0,0)
+flingBtn.Font = Enum.Font.GothamBlack; flingBtn.TextSize = 15
+flingBtn.AutoButtonColor = false; flingBtn.ZIndex = 3
+Instance.new("UICorner", flingBtn).CornerRadius = UDim.new(0,10)
+
+local contBtn = Instance.new("TextButton", m)
+contBtn.Size = UDim2.new(0.35,-15,0,45)
+contBtn.Position = UDim2.new(0.65,0,0,486)
+contBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+contBtn.Text = "🔁 مستمر"
+contBtn.TextColor3 = Color3.new(1,1,1)
+contBtn.Font = Enum.Font.GothamBold; contBtn.TextSize = 11
+contBtn.AutoButtonColor = false; contBtn.ZIndex = 3
+Instance.new("UICorner", contBtn).CornerRadius = UDim.new(0,10)
+local ctS = Instance.new("UIStroke", contBtn)
+ctS.Color = Color3.new(1,1,1); ctS.Thickness = 1; ctS.Transparency = 0.7
+
+-- ═══ Status Box ═══
+local statusBox = Instance.new("Frame", m)
+statusBox.Size = UDim2.new(1,-30,0,110)
+statusBox.Position = UDim2.fromOffset(15,540)
+statusBox.BackgroundColor3 = Color3.fromRGB(8,8,8)
+statusBox.BackgroundTransparency = 0.15
+statusBox.BorderSizePixel = 0
+statusBox.ZIndex = 3
+Instance.new("UICorner", statusBox).CornerRadius = UDim.new(0,8)
+local sbS = Instance.new("UIStroke", statusBox)
+sbS.Color = Color3.new(1,1,1); sbS.Thickness = 1; sbS.Transparency = 0.75
+
+local statusScroll = Instance.new("ScrollingFrame", statusBox)
+statusScroll.Size = UDim2.new(1,-8,1,-8)
+statusScroll.Position = UDim2.fromOffset(4,4)
+statusScroll.BackgroundTransparency = 1
+statusScroll.BorderSizePixel = 0
+statusScroll.ScrollBarThickness = 2
+statusScroll.ScrollBarImageColor3 = Color3.new(1,1,1)
+statusScroll.CanvasSize = UDim2.new(0,0,0,0)
+statusScroll.ZIndex = 4
+
+local statusText = Instance.new("TextLabel", statusScroll)
+statusText.Size = UDim2.new(1,-4,0,0)
+statusText.BackgroundTransparency = 1
+statusText.TextColor3 = Color3.fromRGB(200,200,200)
+statusText.Font = Enum.Font.Code
+statusText.TextSize = 9
+statusText.TextXAlignment = Enum.TextXAlignment.Left
+statusText.TextYAlignment = Enum.TextYAlignment.Top
+statusText.TextWrapped = true
+statusText.AutomaticSize = Enum.AutomaticSize.Y
+statusText.ZIndex = 5
+
+-- ═══ State ═══
+local tgt = nil
+local busy = false
+local flings = 0
+local selectedIdx = 1
+local continuous = false
+local contThread = nil
+local logs = {}
+local pb = {}
+
+local function log(m2)
+    table.insert(logs, os.date("%H:%M:%S") .. " • " .. m2)
+    if #logs > 8 then table.remove(logs, 1) end
+end
+
+local function rf()
+    for _,b in pairs(pb) do pcall(function() b:Destroy() end) end
+    pb = {}
+    for _,p in ipairs(PS:GetPlayers()) do
+        if p ~= LP then
+            local b = Instance.new("TextButton", pl)
+            b.Size = UDim2.new(1,-8,0,26)
+            b.BackgroundColor3 = (tgt == p) and Color3.new(1,1,1) or Color3.fromRGB(28,28,28)
+            b.Text = "  👤 " .. p.Name
+            b.TextColor3 = (tgt == p) and Color3.new(0,0,0) or Color3.new(1,1,1)
+            b.Font = Enum.Font.GothamBold; b.TextSize = 10
+            b.TextXAlignment = Enum.TextXAlignment.Left
+            b.AutoButtonColor = false; b.ZIndex = 4
+            Instance.new("UICorner", b).CornerRadius = UDim.new(0,5)
+            b.MouseButton1Click:Connect(function()
+                tgt = p; tl.Text = p.Name; rf()
+            end)
+            pb[p] = b
+        end
+    end
+end
+rf()
+PS.PlayerAdded:Connect(function() task.wait(0.3); rf() end)
+PS.PlayerRemoving:Connect(function(p)
+    if tgt == p then tgt = nil; tl.Text = "لم يتم تحديد هدف" end
+    rf()
+end)
+
+nearestBtn.MouseButton1Click:Connect(function()
+    local c = LP.Character
+    if not c then return end
+    local h = c:FindFirstChild("HumanoidRootPart")
+    if not h then return end
+    local near, minD = nil, math.huge
+    for _, p in ipairs(PS:GetPlayers()) do
+        if p ~= LP and p.Character then
+            local hp = p.Character:FindFirstChild("HumanoidRootPart")
+            if hp then
+                local d = (hp.Position - h.Position).Magnitude
+                if d < minD then minD = d; near = p end
+            end
+        end
+    end
+    if near then tgt = near; tl.Text = near.Name .. " (" .. math.floor(minD) .. ")" ; rf() end
+end)
+
+-- ═══ Helpers ═══
+local function prep()
+    local c = LP.Character
+    if not c then return nil end
+    local h = c:FindFirstChild("HumanoidRootPart")
+    if not h then return nil end
+    for _, x in ipairs(h:GetChildren()) do
+        if x:IsA("BodyMover") or x:IsA("AlignPosition") or x:IsA("AlignOrientation") or x:IsA("LinearVelocity") or x:IsA("AngularVelocity") or x:IsA("VectorForce") then
+            pcall(function() x:Destroy() end)
+        end
+    end
+    for _, p in ipairs(c:GetDescendants()) do
+        if p:IsA("BasePart") then pcall(function() p.CanCollide = true; p.Massless = false end) end
+    end
+    return h
+end
+local function th()
+    if not tgt or not tgt.Character then return nil, nil end
+    return tgt.Character, tgt.Character:FindFirstChild("HumanoidRootPart")
+end
+local function thu()
+    if not tgt or not tgt.Character then return nil end
+    return tgt.Character:FindFirstChildOfClass("Humanoid")
+end
+local function fastMove(mh, th2, dur, onFrame)
+    task.spawn(function()
+        local frames = math.floor(dur * 60)
+        for i = 1, frames do
+            if not mh or not mh.Parent or not th2 or not th2.Parent then break end
+            pcall(function() onFrame(mh, th2) end)
+            RS.Heartbeat:Wait()
+        end
+    end)
+end
+local function quickBV(hrp, vel, dur)
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3.new(9e9,9e9,9e9); bv.Velocity = vel; bv.Parent = hrp
+    task.delay(dur or 1, function() pcall(function() bv:Destroy() end) end)
+end
+
+-- ═══════════════════════════════════════════════
+-- 30 تقنية
+-- ═══════════════════════════════════════════════
+local T = {}
+
+T[1] = {"Touch + Spin", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    local bg = Instance.new("BodyGyro"); bg.MaxTorque = Vector3.new(9e9,9e9,9e9); bg.P=30000; bg.Parent = mh
+    local bv = Instance.new("BodyVelocity"); bv.MaxForce = Vector3.new(9e9,9e9,9e9); bv.Parent = mh
+    fastMove(mh, th2, 1.5, function(mh, th2)
+        mh.CFrame = th2.CFrame * CFrame.new(math.random(-1,1),2,math.random(-1,1))
+        bg.CFrame = CFrame.Angles(math.random()*100,math.random()*100,math.random()*100)
+        bv.Velocity = Vector3.new(math.random(-1e9,1e9),math.random(1e8,1e9),math.random(-1e9,1e9))
+    end)
+    task.delay(1.6, function() pcall(function() bg:Destroy() end); pcall(function() bv:Destroy() end) end)
+end}
+
+T[2] = {"Weld Velocity", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,3,0)
+    local w = Instance.new("WeldConstraint"); w.Part0 = mh; w.Part1 = th2; w.Parent = mh
+    local bv = Instance.new("BodyVelocity"); bv.MaxForce = Vector3.new(9e9,9e9,9e9); bv.Parent = mh
+    fastMove(mh, th2, 1.5, function(mh, th2)
+        bv.Velocity = Vector3.new(math.random(-1e9,1e9),math.random(1e8,1e9),math.random(-1e9,1e9))
+    end)
+    task.delay(1.6, function() pcall(function() w:Destroy() end); pcall(function() bv:Destroy() end) end)
+end}
+
+T[3] = {"BodyVelocity Spam", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    local bv = Instance.new("BodyVelocity"); bv.MaxForce = Vector3.new(9e9,9e9,9e9); bv.Parent = mh
+    fastMove(mh, th2, 1.5, function(mh, th2)
+        bv.Velocity = Vector3.new(math.random(-1e9,1e9),math.random(1e8,1e9),math.random(-1e9,1e9))
+    end)
+    task.delay(1.6, function() pcall(function() bv:Destroy() end) end)
+end}
+
+T[4] = {"BodyGyro Spin", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    local bg = Instance.new("BodyGyro"); bg.MaxTorque = Vector3.new(9e9,9e9,9e9); bg.P=30000; bg.Parent = mh
+    fastMove(mh, th2, 1.5, function(mh, th2)
+        bg.CFrame = CFrame.Angles(math.random()*100,math.random()*100,math.random()*100)
+    end)
+    task.delay(1.6, function() pcall(function() bg:Destroy() end) end)
+end}
+
+T[5] = {"Skid Fling", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,-2,0) * CFrame.Angles(math.rad(180),0,0)
+    quickBV(mh, Vector3.new(0,5e4,0), 1.2)
+    fastMove(mh, th2, 1.2, function(mh, th2)
+        mh.CFrame = th2.CFrame * CFrame.new(math.random(-3,3),-2,math.random(-3,3))
+    end)
+end}
+
+T[6] = {"Spin Fling", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,0,2)
+    local ba = Instance.new("BodyAngularVelocity"); ba.MaxTorque = Vector3.new(9e9,9e9,9e9); ba.AngularVelocity = Vector3.new(1e6,1e6,1e6); ba.Parent = mh
+    quickBV(mh, Vector3.new(1e4,1e4,1e4), 1)
+    task.delay(1, function() pcall(function() ba:Destroy() end) end)
+end}
+
+T[7] = {"Flip Fling", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,1,0)
+    local bv = Instance.new("BodyVelocity"); bv.MaxForce = Vector3.new(9e9,9e9,9e9); bv.Parent = mh
+    fastMove(mh, th2, 1.5, function(mh)
+        mh.CFrame = mh.CFrame * CFrame.Angles(math.pi*4,math.pi*4,math.pi*4)
+        bv.Velocity = Vector3.new(1e8,1e8,1e8)
+    end)
+    task.delay(1.6, function() pcall(function() bv:Destroy() end) end)
+end}
+
+T[8] = {"CFrame Barrage", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    fastMove(mh, th2, 1.2, function(mh, th2)
+        mh.CFrame = th2.CFrame * CFrame.new(math.random(-3,3),math.random(1,4),math.random(-3,3)) * CFrame.Angles(math.random()*6,math.random()*6,math.random()*6)
+        mh.AssemblyLinearVelocity = Vector3.new(math.random(-1e9,1e9),math.random(5e8,1e9),math.random(-1e9,1e9))
+    end)
+end}
+
+T[9] = {"Rapid Position", function()
+    local tc, th2 = th(); if not th2 then return end
+    task.spawn(function()
+        for i = 1, 40 do
+            pcall(function()
+                if not th2.Parent then return end
+                th2.CFrame = th2.CFrame * CFrame.new(math.random(-500,500),math.random(-500,500),math.random(-500,500))
+                th2.AssemblyLinearVelocity = Vector3.new(math.random(-1e9,1e9),math.random(-1e9,1e9),math.random(-1e9,1e9))
+            end)
+            RS.Heartbeat:Wait()
+        end
+    end)
+end}
+
+T[10] = {"Teleport Spam", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    task.spawn(function()
+        for i = 1, 30 do
+            if not th2.Parent or not mh.Parent then break end
+            pcall(function() mh.CFrame = th2.CFrame * CFrame.new(0,5,0) end)
+            RS.Heartbeat:Wait()
+        end
+    end)
+end}
+
+T[11] = {"BodyPosition", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    local bp = Instance.new("BodyPosition"); bp.MaxForce = Vector3.new(9e9,9e9,9e9); bp.P = 50000; bp.Position = th2.Position; bp.Parent = mh
+    fastMove(mh, th2, 1.5, function(mh, th2)
+        bp.Position = th2.Position + Vector3.new(math.random(-20,20),math.random(-20,20),math.random(-20,20))
+    end)
+    task.delay(1.6, function() pcall(function() bp:Destroy() end) end)
+end}
+
+T[12] = {"AlignPosition", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    local a1 = Instance.new("Attachment"); a1.Parent = mh
+    local a2 = Instance.new("Attachment"); a2.Parent = th2
+    local ap = Instance.new("AlignPosition"); ap.Attachment0 = a1; ap.Attachment1 = a2; ap.MaxForce = 9e9; ap.Responsiveness = 200; ap.Parent = mh
+    fastMove(mh, th2, 1.5, function(mh, th2)
+        a2.Position = Vector3.new(math.random(-30,30),math.random(-30,30),math.random(-30,30))
+    end)
+    task.delay(1.6, function() pcall(function() ap:Destroy() end); pcall(function() a1:Destroy() end); pcall(function() a2:Destroy() end) end)
+end}
+
+T[13] = {"Network Steal", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    pcall(function() mh:SetNetworkOwner(LP) end)
+    pcall(function() if sethiddenproperty then sethiddenproperty(th2, "NetworkOwnership", 2) end end)
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    fastMove(mh, th2, 1.5, function(mh, th2)
+        th2.AssemblyLinearVelocity = Vector3.new(1e8,1e8,1e8)
+        th2.AssemblyAngularVelocity = Vector3.new(1e8,1e8,1e8)
+    end)
+end}
+
+T[14] = {"AssemblyVelocity", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    fastMove(mh, th2, 1.5, function(mh)
+        mh.AssemblyLinearVelocity = Vector3.new(math.random(-1e9,1e9),math.random(1e8,1e9),math.random(-1e9,1e9))
+    end)
+end}
+
+T[15] = {"VectorForce", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    local a = Instance.new("Attachment"); a.Parent = mh
+    local vf = Instance.new("VectorForce"); vf.Attachment0 = a; vf.Force = Vector3.new(1e6,1e6,1e6); vf.Parent = mh
+    fastMove(mh, th2, 1.5, function(mh)
+        vf.Force = Vector3.new(math.random(-1e9,1e9),math.random(1e8,1e9),math.random(-1e9,1e9))
+    end)
+    task.delay(1.6, function() pcall(function() vf:Destroy() end); pcall(function() a:Destroy() end) end)
+end}
+
+T[16] = {"LinearVelocity", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    local a = Instance.new("Attachment"); a.Parent = mh
+    local lv = Instance.new("LinearVelocity"); lv.Attachment0 = a; lv.MaxForce = 9e9; lv.VectorVelocity = Vector3.new(1e6,1e6,1e6); lv.Parent = mh
+    fastMove(mh, th2, 1.5, function(mh)
+        lv.VectorVelocity = Vector3.new(math.random(-1e9,1e9),math.random(1e8,1e9),math.random(-1e9,1e9))
+    end)
+    task.delay(1.6, function() pcall(function() lv:Destroy() end); pcall(function() a:Destroy() end) end)
+end}
+
+T[17] = {"Ragdoll", function()
+    local mh = prep(); local tc, th2 = th(); local h = thu(); if not mh or not th2 or not h then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    quickBV(mh, Vector3.new(1e7,1e7,1e7), 1.5)
+    fastMove(mh, th2, 1.5, function(mh, th2)
+        if h then h:ChangeState(Enum.HumanoidStateType.Ragdoll) end
+    end)
+end}
+
+T[18] = {"HipHeight", function()
+    local mh = prep(); local tc, th2 = th(); local h = thu(); if not mh or not th2 or not h then return end
+    pcall(function() h.HipHeight = 9999 end)
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    quickBV(mh, Vector3.new(0,1e6,0), 1)
+    task.delay(1, function() pcall(function() h.HipHeight = 2 end) end)
+end}
+
+T[19] = {"Motor Break", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 or not tgt or not tgt.Character then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    task.spawn(function()
+        for i = 1, 20 do
+            if not th2.Parent then break end
+            for _, p in ipairs(tgt.Character:GetDescendants()) do
+                if p:IsA("BasePart") then
+                    pcall(function()
+                        p.AssemblyLinearVelocity = Vector3.new(math.random(-1e8,1e8),math.random(1e8,1e8),math.random(-1e8,1e8))
+                        p.AssemblyAngularVelocity = Vector3.new(math.random(-1e8,1e8),math.random(-1e8,1e8),math.random(-1e8,1e8))
+                    end)
+                end
+            end
+            RS.Heartbeat:Wait()
+        end
+    end)
+end}
+
+T[20] = {"Joint Destroy", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 or not tgt or not tgt.Character then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    for _, j in ipairs(tgt.Character:GetDescendants()) do
+        if j:IsA("Motor6D") or j:IsA("Weld") or j:IsA("WeldConstraint") then
+            pcall(function() j:Destroy() end)
+        end
+    end
+end}
+
+T[21] = {"Character Split", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 or not tgt or not tgt.Character then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    for _, p in ipairs(tgt.Character:GetDescendants()) do
+        if p:IsA("BasePart") then
+            pcall(function()
+                p.AssemblyLinearVelocity = Vector3.new(math.random(-5e7,5e7),math.random(5e7,5e7),math.random(-5e7,5e7))
+            end)
+        end
+    end
+end}
+
+T[22] = {"Accessory Fling", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 or not LP.Character then return end
+    local has = false
+    for _, v in ipairs(LP.Character:GetChildren()) do if v:IsA("Accessory") then has = true; break end end
+    if not has then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,1,0)
+    local bv = Instance.new("BodyVelocity"); bv.MaxForce = Vector3.new(9e9,9e9,9e9); bv.Parent = mh
+    fastMove(mh, th2, 1.5, function(mh, th2)
+        mh.CFrame = th2.CFrame * CFrame.new(0,1,0) * CFrame.Angles(math.random()*50,math.random()*50,math.random()*50)
+        bv.Velocity = Vector3.new(math.random(-1e9,1e9),math.random(5e8,1e9),math.random(-1e9,1e9))
+    end)
+    task.delay(1.6, function() pcall(function() bv:Destroy() end) end)
+end}
+
+T[23] = {"Tool Fling", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 or not LP.Character then return end
+    local bp = LP:FindFirstChild("Backpack")
+    local tool = bp and bp:FindFirstChildOfClass("Tool")
+    if not tool then return end
+    pcall(function() tool.Parent = LP.Character end)
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    quickBV(mh, Vector3.new(1e7,1e7,1e7), 1)
+end}
+
+T[24] = {"Hat Fling", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 or not LP.Character then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    for _, p in ipairs(LP.Character:GetChildren()) do
+        if p:IsA("Accessory") then
+            local hdl = p:FindFirstChild("Handle")
+            if hdl then pcall(function() hdl.CanCollide = true end) end
+        end
+    end
+    fastMove(mh, th2, 1.5, function(mh)
+        mh.AssemblyLinearVelocity = Vector3.new(1e8,1e8,1e8)
+    end)
+end}
+
+T[25] = {"Seat Weld", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 or not LP.Character then return end
+    local myH = LP.Character:FindFirstChildOfClass("Humanoid")
+    if not myH then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,0,1)
+    pcall(function() myH.Sit = true end)
+    fastMove(mh, th2, 1.5, function(mh, th2)
+        mh.CFrame = th2.CFrame * CFrame.new(0,0,1)
+        mh.AssemblyLinearVelocity = Vector3.new(1e9,1e9,1e9)
+    end)
+    task.delay(1.6, function() pcall(function() myH.Sit = false end) end)
+end}
+
+T[26] = {"SUPER FLING", function()
+    local mh = prep(); local tc, th2 = th(); local h = thu(); if not mh or not th2 then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    local w = Instance.new("WeldConstraint"); w.Part0 = mh; w.Part1 = th2; w.Parent = mh
+    local bv = Instance.new("BodyVelocity"); bv.MaxForce = Vector3.new(9e9,9e9,9e9); bv.Parent = mh
+    local bg = Instance.new("BodyGyro"); bg.MaxTorque = Vector3.new(9e9,9e9,9e9); bg.P=30000; bg.Parent = mh
+    fastMove(mh, th2, 2, function(mh, th2)
+        mh.CFrame = th2.CFrame * CFrame.new(math.random(-2,2),1+math.random(0,3),math.random(-2,2))
+        bv.Velocity = Vector3.new(math.random(-1e9,1e9),math.random(1e8,1e9),math.random(-1e9,1e9))
+        bg.CFrame = CFrame.Angles(math.random()*100,math.random()*100,math.random()*100)
+        if h then h:ChangeState(Enum.HumanoidStateType.Ragdoll) end
+    end)
+    task.delay(2.1, function() pcall(function() w:Destroy() end); pcall(function() bv:Destroy() end); pcall(function() bg:Destroy() end) end)
+end}
+
+T[27] = {"Hybrid Spin", function()
+    local mh = prep(); local tc, th2 = th(); if not mh or not th2 then return end
+    mh.CFrame = th2.CFrame * CFrame.new(0,2,0)
+    local w = Instance.new("WeldConstraint"); w.Part0 = mh; w.Part1 = th2; w.Parent = mh
+    local bg = Instance.new("BodyGyro"); bg.MaxTorque = Vector3.new(9e9,9e9,9e9); bg.P=30000; bg.Parent = mh
+    fastMove(mh, th2, 1.5, function(mh)
+        bg.CFrame = CFrame.Angles(math.random()*100,math.random()*100,math.random()*100)
+    end)
+    task.delay(1.6, function() pcall(function() w:Destroy() end); pcall(function() bg:Destroy() end) end)
+end}
+
+T[28] = {"Multi-Fling 10x", function()
+    for i = 1, 10 do
+        local mh = prep(); local tc, th2 = th()
+        if mh and th2 then
+            pcall(function()
+                mh.CFrame = th2.CFrame * CFrame.new(math.random(-2,2),2,math.random(-2,2))
+                mh.AssemblyLinearVelocity = Vector3.new(math.random(-1e9,1e9),math.random(1e8,1e9),math.random(-1e9,1e9))
+            end)
+        end
+        task.wait(0.1)
+    end
+end}
+
+T[29] = {"Extreme (All)", function()
+    for _, idx in ipairs({1, 2, 3, 7, 26}) do
+        if T[idx] then pcall(T[idx][2]) end
+        task.wait(0.15)
+    end
+end}
+
+T[30] = {"Nuke Fling", function()
+    local mh = prep(); local tc, th2 = th(); local h = thu(); if not mh or not th2 or not tgt or not tgt.Character then return end
+    if h then pcall(function() h.HipHeight = 9999; h:ChangeState(Enum.HumanoidStateType.Ragdoll) end) end
+    task.spawn(function()
+        for i = 1, 50 do
+            pcall(function()
+                if th2.Parent then
+                    th2.AssemblyLinearVelocity = Vector3.new(math.random(-1e9,1e9),math.random(1e8,1e9),math.random(-1e9,1e9))
+                    th2.AssemblyAngularVelocity = Vector3.new(math.random(-1e9,1e9),math.random(-1e9,1e9),math.random(-1e9,1e9))
+                end
+            end)
+            RS.Heartbeat:Wait()
+        end
+    end)
+end}
+
+-- ═══ Build method buttons ═══
+local methodBtns = {}
+for i, t in ipairs(T) do
+    local b = Instance.new("TextButton", ms2)
+    b.Size = UDim2.new(1,-8,0,26)
+    b.BackgroundColor3 = (i == 1) and Color3.new(1,1,1) or Color3.fromRGB(20,20,20)
+    b.Text = string.format("  %2d. %s", i, t[1])
+    b.TextColor3 = (i == 1) and Color3.new(0,0,0) or Color3.new(1,1,1)
+    b.Font = Enum.Font.GothamBold; b.TextSize = 10
+    b.TextXAlignment = Enum.TextXAlignment.Left
+    b.AutoButtonColor = false; b.ZIndex = 4
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0,5)
+    b.MouseButton1Click:Connect(function()
+        selectedIdx = i
+        for j, bb in pairs(methodBtns) do
+            if j == i then
+                bb.BackgroundColor3 = Color3.new(1,1,1); bb.TextColor3 = Color3.new(0,0,0)
+            else
+                bb.BackgroundColor3 = Color3.fromRGB(20,20,20); bb.TextColor3 = Color3.new(1,1,1)
+            end
+        end
+    end)
+    methodBtns[i] = b
+end
+
+-- ═══ FLING Button ═══
+local function runSelected()
+    if busy then return end
+    if not tgt or not tgt.Character then
+        log("❌ ما فيه هدف"); return
+    end
+    busy = true
+    local tech = T[selectedIdx]
+    log("⏳ " .. tech[1])
+    task.spawn(function()
+        local ok = pcall(tech[2])
+        task.wait(0.6)
+        if ok then
+            flings = flings + 1
+            log("✅ " .. tech[1] .. "  (" .. flings .. ")")
+        else
+            log("❌ " .. tech[1])
+        end
+        busy = false
+    end)
+end
+
+flingBtn.MouseButton1Click:Connect(runSelected)
+
+-- ═══ CONTINUOUS Button ═══
+contBtn.MouseButton1Click:Connect(function()
+    continuous = not continuous
+    if continuous then
+        contBtn.BackgroundColor3 = Color3.new(1,1,1)
+        contBtn.TextColor3 = Color3.new(0,0,0)
+        contBtn.Text = "⏹ إيقاف"
+        ctS.Transparency = 0.2
+        log("▶️ مستمر — " .. T[selectedIdx][1])
+        if contThread then pcall(task.cancel, contThread) end
+        contThread = task.spawn(function()
+            while continuous do
+                if not busy and tgt and tgt.Character then
+                    runSelected()
+                end
+                task.wait(2)
+            end
+        end)
+    else
+        contBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+        contBtn.TextColor3 = Color3.new(1,1,1)
+        contBtn.Text = "🔁 مستمر"
+        ctS.Transparency = 0.7
+        log("⏹ تم إيقاف المستمر")
+        if contThread then pcall(task.cancel, contThread); contThread = nil end
+    end
+end)
+
+-- ═══ Status updater ═══
+task.spawn(function()
+    while sg.Parent do
+        task.wait(0.4)
+        if statusText.Parent then
+            local lines = {"═══ الحالة ═══", "الهدف: " .. (tgt and tgt.Name or "—"), "الطريقة: " .. T[selectedIdx][1], "الفلنقات: " .. flings, "مستمر: " .. (continuous and "ON" or "OFF")}
+            if #logs > 0 then
+                table.insert(lines, "═══ السجل ═══")
+                for _, l in ipairs(logs) do table.insert(lines, l) end
+            end
+            statusText.Text = table.concat(lines, "\n")
+        end
+    end
+end)
+
+-- ═══ Animation ═══
+task.spawn(function()
+    while sg.Parent do
+        local t = tick()
+        for _, s in ipairs(stars) do
+            if s.f.Parent then
+                s.f.BackgroundTransparency = math.clamp(s.b + math.sin(t * s.sp + s.ph) * s.a, 0, 1)
+            end
+        end
+        for _, ss in ipairs(shooting) do
+            if ss.f.Parent then
+                local cyc = (t + ss.delay) % 12
+                if cyc < 1.6 then
+                    local p = cyc / 1.6
+                    ss.f.Position = UDim2.fromScale(1.15 - p * 1.3, 0.05 + p * 0.85)
+                    ss.f.BackgroundTransparency = math.sin(p * math.pi) * 0.3
+                else
+                    ss.f.BackgroundTransparency = 1
+                end
+            end
+        end
+        RS.RenderStepped:Wait()
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════════
+-- 🌟 Floating Toggle Icon (فتح/غلق النافذة)
+-- ═══════════════════════════════════════════════════════════
+iconToggle = Instance.new("TextButton", sg)
+iconToggle.Name = "FlingToggleIcon"
+iconToggle.Size = UDim2.fromOffset(52, 52)
+iconToggle.Position = UDim2.fromOffset(20, vp.Y * 0.55)
+iconToggle.BackgroundColor3 = Color3.new(0, 0, 0)
+iconToggle.Text = "🚀"
+iconToggle.TextColor3 = Color3.new(1, 1, 1)
+iconToggle.Font = Enum.Font.GothamBlack
+iconToggle.TextSize = 24
+iconToggle.AutoButtonColor = false
+iconToggle.Visible = false
+iconToggle.ZIndex = 500
+Instance.new("UICorner", iconToggle).CornerRadius = UDim.new(1, 0)
+
+local iconStroke = Instance.new("UIStroke", iconToggle)
+iconStroke.Color = Color3.new(1, 1, 1)
+iconStroke.Thickness = 2
+iconStroke.Transparency = 0.1
+
+-- سحب الأيقونة
+local iDrag, iStart, iStartPos = false, nil, nil
+iconToggle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        iDrag = true
+        iStart = input.Position
+        iStartPos = iconToggle.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then iDrag = false end
+        end)
+    end
+end)
+UIS.InputChanged:Connect(function(input)
+    if iDrag and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local d = input.Position - iStart
+        iconToggle.Position = UDim2.fromOffset(iStartPos.X.Offset + d.X, iStartPos.Y.Offset + d.Y)
+    end
+end)
+
+-- ضغطة = فتح/غلق
+iconToggle.MouseButton1Click:Connect(function()
+    m.Visible = not m.Visible
+    if m.Visible then iconToggle.Visible = false end
+end)
+
+-- نبض الأيقونة
+task.spawn(function()
+    while sg.Parent do
+        task.wait(1.2)
+        if iconStroke.Parent then
+            iconStroke.Thickness = 2.8
+            iconStroke.Transparency = 0.35
+        end
+        task.wait(1.2)
+        if iconStroke.Parent then
+            iconStroke.Thickness = 1.6
+            iconStroke.Transparency = 0.05
+        end
+    end
+end)
+
+print("✅ TRO FLING PRO — 30 تقنية (مع أيقونة)")
+]====]
+
+local flingProBtn = mkBtn(pageTools, "🚀 TRO FLING PRO (30)", UDim2.new(1, 0, 0, 42), UDim2.fromOffset(0, 192), function()
+    runToolSource(flingProSource, "TRO FLING PRO")
+end)
+flingProBtn.BackgroundColor3 = C_BTN_ACTIVE
 
 local toolsNote = Instance.new("TextLabel", pageTools)
 toolsNote.Position = UDim2.fromOffset(2, 198)
@@ -4867,7 +5786,7 @@ toolsNoteUnderline.Size = UDim2.new(1, 0, 0, 1)
 toolsNoteUnderline.BackgroundColor3 = C_STROKE_HI
 toolsNoteUnderline.BorderSizePixel = 0
 
-pageTools.CanvasSize = UDim2.new(0, 0, 0, 275)
+pageTools.CanvasSize = UDim2.new(0, 0, 0, 325)
 
 task.spawn(function()
     while pageAntis.Parent do
