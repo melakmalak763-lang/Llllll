@@ -1334,255 +1334,285 @@ updateSpamList()
 Players.PlayerAdded:Connect(updateSpamList)
 Players.PlayerRemoving:Connect(updateSpamList)
 
--- ========== TARGET PAGE ==========
+-- ========== TARGET PAGE — VR7 v4 PORT (BLACK EDITION) ==========
 -- ═══════════════════════════════════════════════════════════════════
--- 🎯 TARGET SYSTEM — COMPLETE & FIXED
+-- 🎯 نظام الاستهداف الكامل من VR7 v4 — محوّل لثيم أسود 100%
 -- ═══════════════════════════════════════════════════════════════════
 local CurrentTarget = nil
-local FlingOriginalPos = nil
+local CurrentTargetName = nil
+local FlingOldPos = nil
 local TalkRepeater = nil
 
+-- 🎨 ثيم أسود كامل (بدون أخضر)
+local BK = {
+    ROOT      = Color3.fromRGB(0, 0, 0),
+    PAGE      = Color3.fromRGB(4, 4, 6),
+    BTN       = Color3.fromRGB(14, 14, 18),
+    BTN_HOT   = Color3.fromRGB(40, 40, 48),
+    TEXT      = Color3.fromRGB(228, 228, 235),
+    TEXT_DIM  = Color3.fromRGB(145, 145, 155),
+    STROKE    = Color3.fromRGB(52, 52, 62),
+    STROKE_HI = Color3.fromRGB(190, 190, 200),
+    INPUT     = Color3.fromRGB(10, 10, 14),
+    ON        = Color3.fromRGB(230, 230, 240),  -- مؤشر ON أبيض بدل أخضر
+    OFF       = Color3.fromRGB(90, 30, 30),     -- مؤشر OFF أحمر داكن
+}
+
 -- ─── Helpers ───
-local function GetLocalChar()
+local function TG_GetChar()
     return player.Character
 end
-
-local function GetLocalRoot()
-    local c = GetLocalChar()
+local function TG_GetRoot(p)
+    local c = p and p.Character or nil
     return c and c:FindFirstChild("HumanoidRootPart") or nil
 end
-
-local function GetLocalHum()
-    local c = GetLocalChar()
+local function TG_GetHum(p)
+    local c = p and p.Character or nil
     return c and c:FindFirstChildOfClass("Humanoid") or nil
 end
-
-local function GetTargetChar()
-    return CurrentTarget and CurrentTarget.Character or nil
+local function TG_GetLocalRoot()
+    return TG_GetRoot(player)
+end
+local function TG_GetLocalHum()
+    return TG_GetHum(player)
+end
+local function TG_TargetRoot()
+    return TG_GetRoot(CurrentTarget)
+end
+local function TG_TargetHum()
+    return TG_GetHum(CurrentTarget)
 end
 
-local function GetTargetRoot()
-    local c = GetTargetChar()
-    return c and c:FindFirstChild("HumanoidRootPart") or nil
-end
-
-local function GetTargetHum()
-    local c = GetTargetChar()
-    return c and c:FindFirstChildOfClass("Humanoid") or nil
-end
-
-local function playAnimById(id, speed, timePos)
+local function TG_PlayAnim(id, speed, timePos)
     pcall(function()
-        local char = GetLocalChar()
-        if not char then return end
-        local hum = char:FindFirstChildOfClass("Humanoid")
+        local hum = TG_GetLocalHum()
         if not hum then return end
-        for _, t in pairs(hum:GetPlayingAnimationTracks()) do
-            pcall(function() t:Stop() end)
-        end
-        local anim = Instance.new("Animation")
-        anim.AnimationId = "rbxassetid://" .. tostring(id)
-        local track = hum:LoadAnimation(anim)
-        track.Priority = Enum.AnimationPriority.Action
-        track.Looped = false
-        track:Play()
-        if timePos then track.TimePosition = timePos end
-        if speed then track:AdjustSpeed(speed) end
+        for _, t in pairs(hum:GetPlayingAnimationTracks()) do pcall(function() t:Stop() end) end
+        local a = Instance.new("Animation")
+        a.AnimationId = "rbxassetid://" .. tostring(id)
+        local tr = hum:LoadAnimation(a)
+        tr.Priority = Enum.AnimationPriority.Action
+        tr.Looped = false
+        tr:Play()
+        if timePos then tr.TimePosition = timePos end
+        if speed then tr:AdjustSpeed(speed) end
     end)
 end
 
--- ─── UI ───
+local function TG_StopAnim()
+    pcall(function()
+        local hum = TG_GetLocalHum()
+        if not hum then return end
+        for _, t in pairs(hum:GetPlayingAnimationTracks()) do pcall(function() t:Stop() end) end
+    end)
+end
+
+-- ─── تحديث مؤشر الزر (ON/OFF) ───
+local function TG_ToggleIndicator(btn)
+    local tkt = btn and btn:FindFirstChild("Ticket_Asset")
+    if not tkt then return end
+    if tkt.ImageColor3 ~= BK.OFF then
+        tkt.ImageColor3 = BK.OFF
+    else
+        tkt.ImageColor3 = BK.ON
+    end
+end
+
+local function TG_IsOn(btn)
+    local tkt = btn and btn:FindFirstChild("Ticket_Asset")
+    return tkt and tkt.ImageColor3 == BK.ON
+end
+
+-- ─── إيقاف كل مؤشرات الأزرار (قبل تشغيل واحد) ───
+local TG_Buttons = {}
+local function TG_ResetAll(exceptBtn)
+    for _, b in ipairs(TG_Buttons) do
+        if b ~= exceptBtn then
+            local tkt = b:FindFirstChild("Ticket_Asset")
+            if tkt then tkt.ImageColor3 = BK.OFF end
+        end
+    end
+end
+
+-- ═══════════════════════════════════════════════════════════════════
+-- UI CONSTRUCTION
+-- ═══════════════════════════════════════════════════════════════════
 do
+    -- عنوان القسم
     local tT = Instance.new("TextLabel", pageTarget)
-    tT.Size = UDim2.new(0.9, 0, 0, 30)
-    tT.Position = UDim2.new(0.04, 0, 0, 10)
+    tT.Size = UDim2.new(0.92, 0, 0, 28)
+    tT.Position = UDim2.new(0.04, 0, 0, 6)
     tT.BackgroundTransparency = 1
-    tT.TextColor3 = Color3.fromRGB(0, 255, 120)
-    tT.Text = "[*] نظام الاستهداف المتقدم // VR7 target_system.py"
+    tT.TextColor3 = BK.TEXT
+    tT.Text = "// TARGET SYSTEM — VR7 BLACK //"
     tT.TextSize = 11
-    tT.Font = Enum.Font.Gotham
+    tT.Font = Enum.Font.GothamBold
     tT.TextXAlignment = Enum.TextXAlignment.Left
     tT.ZIndex = 4
 
+    -- صورة الضحية
     local targetImg = Instance.new("ImageLabel", pageTarget)
-    targetImg.Size = UDim2.new(0, 85, 0, 85)
-    targetImg.Position = UDim2.new(0.04, 0, 0, 45)
-    targetImg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    targetImg.BorderColor3 = Color3.fromRGB(0, 255, 120)
+    targetImg.Size = UDim2.new(0, 90, 0, 90)
+    targetImg.Position = UDim2.new(0.04, 0, 0, 40)
+    targetImg.BackgroundColor3 = BK.BTN
+    targetImg.BorderSizePixel = 0
     targetImg.Image = "rbxassetid://10818605405"
     targetImg.ZIndex = 4
-    Instance.new("UICorner", targetImg).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", targetImg).CornerRadius = UDim.new(0, 10)
+    Instance.new("UIStroke", targetImg).Color = BK.STROKE
 
+    -- حقل الاسم
     local tInp = Instance.new("TextBox", pageTarget)
-    tInp.Size = UDim2.new(0, 175, 0, 30)
-    tInp.Position = UDim2.new(0.28, 0, 0, 45)
+    tInp.Size = UDim2.new(0.62, -45, 0, 34)
+    tInp.Position = UDim2.new(0.28, 0, 0, 40)
+    tInp.BackgroundColor3 = BK.INPUT
+    tInp.BorderSizePixel = 0
     tInp.PlaceholderText = "@target..."
-    tInp.PlaceholderColor3 = Color3.fromRGB(100, 200, 110)
-    tInp.TextColor3 = Color3.fromRGB(200, 255, 200)
-    tInp.BackgroundColor3 = Color3.fromRGB(10, 25, 14)
+    tInp.PlaceholderColor3 = BK.TEXT_DIM
+    tInp.TextColor3 = BK.TEXT
+    tInp.Text = ""
+    tInp.TextSize = 12
     tInp.Font = Enum.Font.Gotham
-    tInp.TextSize = 11
     tInp.ClearTextOnFocus = false
     tInp.ZIndex = 5
-    Instance.new("UICorner", tInp).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", tInp).CornerRadius = UDim.new(0, 7)
+    Instance.new("UIStroke", tInp).Color = BK.STROKE
 
-    local clickTgtBtn = Instance.new("TextButton", pageTarget)
-    clickTgtBtn.Size = UDim2.new(0, 30, 0, 30)
-    clickTgtBtn.Position = UDim2.new(0.77, 0, 0, 45)
-    clickTgtBtn.Text = "🎯"
-    clickTgtBtn.TextColor3 = Color3.fromRGB(200, 255, 200)
-    clickTgtBtn.BackgroundColor3 = Color3.fromRGB(15, 60, 30)
-    clickTgtBtn.Font = Enum.Font.GothamBold
-    clickTgtBtn.TextSize = 14
-    clickTgtBtn.ZIndex = 10
-    Instance.new("UICorner", clickTgtBtn).CornerRadius = UDim.new(0, 6)
+    -- زر أداة الاختيار (🎯)
+    local pickToolBtn = Instance.new("TextButton", pageTarget)
+    pickToolBtn.Size = UDim2.new(0, 34, 0, 34)
+    pickToolBtn.Position = UDim2.new(0.9, 0, 0, 40)
+    pickToolBtn.BackgroundColor3 = BK.BTN
+    pickToolBtn.Text = "🎯"
+    pickToolBtn.TextColor3 = BK.TEXT
+    pickToolBtn.TextSize = 16
+    pickToolBtn.Font = Enum.Font.GothamBold
+    pickToolBtn.AutoButtonColor = false
+    pickToolBtn.ZIndex = 10
+    Instance.new("UICorner", pickToolBtn).CornerRadius = UDim.new(0, 7)
+    Instance.new("UIStroke", pickToolBtn).Color = BK.STROKE
 
+    -- معلومات الضحية
     local infoL = Instance.new("TextLabel", pageTarget)
-    infoL.Size = UDim2.new(0, 180, 0, 65)
+    infoL.Size = UDim2.new(0.62, -45, 0, 60)
     infoL.Position = UDim2.new(0.28, 0, 0, 78)
     infoL.BackgroundTransparency = 1
     infoL.Text = "UserID: ---\nDisplay: ---\nJoined: ---"
-    infoL.TextColor3 = Color3.fromRGB(0, 255, 120)
-    infoL.Font = Enum.Font.Gotham
+    infoL.TextColor3 = BK.TEXT_DIM
     infoL.TextSize = 10
+    infoL.Font = Enum.Font.Code
     infoL.TextXAlignment = Enum.TextXAlignment.Left
     infoL.TextYAlignment = Enum.TextYAlignment.Top
     infoL.ZIndex = 4
 
-    -- ─── UpdateTarget ───
-    local function UpdateTarget(secondaryPlayer)
-        if secondaryPlayer == nil then
-            tInp.Text = "@target..."
+    -- ═══════════════════════════════════════════════════════════
+    -- UpdateTarget
+    -- ═══════════════════════════════════════════════════════════
+    local function UpdateTarget(plr)
+        if plr == nil then
+            tInp.Text = ""
             infoL.Text = "UserID: ---\nDisplay: ---\nJoined: ---"
             targetImg.Image = "rbxassetid://10818605405"
             CurrentTarget = nil
-            for _, btn in ipairs(pageTarget:GetChildren()) do
-                if btn:IsA("TextButton") then
-                    local tkt = btn:FindFirstChild("Ticket_Asset")
-                    if tkt and tkt:IsA("ImageLabel") then
-                        tkt.ImageColor3 = Color3.fromRGB(255, 0, 0)
-                    end
-                end
-            end
-            if TalkRepeater then
-                pcall(function() TalkRepeater:Disconnect() end)
-                TalkRepeater = nil
-            end
+            CurrentTargetName = nil
+            TG_ResetAll(nil)
+            if TalkRepeater then pcall(function() TalkRepeater:Disconnect() end) TalkRepeater = nil end
             return
         end
-        CurrentTarget = secondaryPlayer
-        tInp.Text = secondaryPlayer.Name
-        local success, thumb = pcall(function()
-            return Players:GetUserThumbnailAsync(
-                secondaryPlayer.UserId,
-                Enum.ThumbnailType.HeadShot,
-                Enum.ThumbnailSize.Size420x420
-            )
+        CurrentTarget = plr
+        CurrentTargetName = plr.Name
+        tInp.Text = plr.Name
+        local ok, thumb = pcall(function()
+            return Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
         end)
-        targetImg.Image = success and thumb or "rbxassetid://10818605405"
-        local age = os.date("%Y/%m/%d", os.time() - (secondaryPlayer.AccountAge * 86400))
-        infoL.Text = "UserID: " .. secondaryPlayer.UserId ..
-                     "\nDisplay: @" .. secondaryPlayer.DisplayName ..
-                     "\nJoined: " .. age
-        notify("Target", "✅ تم تحديد: " .. secondaryPlayer.Name)
-        if TalkRepeater then
-            pcall(function() TalkRepeater:Disconnect() end)
-            TalkRepeater = nil
-        end
+        targetImg.Image = ok and thumb or "rbxassetid://10818605405"
+        local age = os.date("%Y/%m/%d", os.time() - (plr.AccountAge * 86400))
+        infoL.Text = "UserID: " .. plr.UserId .. "\nDisplay: @" .. plr.DisplayName .. "\nJoined: " .. age
+        notify("Target", "✅ " .. plr.Name)
     end
 
-    -- ─── Action button factory ───
-    local function makeActionButton(text, x, y)
+    -- ═══════════════════════════════════════════════════════════
+    -- زر موحد (أسود)
+    -- ═══════════════════════════════════════════════════════════
+    local function makeBtn(text, x, y)
         local b = Instance.new("TextButton", pageTarget)
         b.Size = UDim2.new(0, 175, 0, 32)
         b.Position = UDim2.new(0, x, 0, y)
-        b.BackgroundColor3 = Color3.fromRGB(10, 22, 14)
-        b.BackgroundTransparency = 0.3
-        b.TextColor3 = Color3.fromRGB(200, 255, 200)
+        b.BackgroundColor3 = BK.BTN
+        b.BorderSizePixel = 0
+        b.TextColor3 = BK.TEXT
         b.Text = text
         b.TextSize = 10
-        b.Font = Enum.Font.Gotham
+        b.Font = Enum.Font.GothamBold
+        b.AutoButtonColor = false
         b.ZIndex = 10
         Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
-        local bs = Instance.new("UIStroke", b)
-        bs.Thickness = 0.8
-        bs.Color = Color3.fromRGB(0, 255, 120)
+        Instance.new("UIStroke", b).Color = BK.STROKE
         local tkt = Instance.new("ImageLabel", b)
         tkt.Name = "Ticket_Asset"
-        tkt.Size = UDim2.new(0, 22, 0, 22)
-        tkt.Position = UDim2.new(1, -28, 0.5, -11)
+        tkt.Size = UDim2.new(0, 20, 0, 20)
+        tkt.Position = UDim2.new(1, -26, 0.5, -10)
         tkt.BackgroundTransparency = 1
         tkt.Image = "rbxassetid://3926305904"
-        tkt.ImageColor3 = Color3.fromRGB(255, 0, 0)
+        tkt.ImageColor3 = BK.OFF
         tkt.ImageRectOffset = Vector2.new(424, 4)
         tkt.ImageRectSize = Vector2.new(36, 36)
         tkt.ZIndex = 11
+        table.insert(TG_Buttons, b)
         return b
     end
 
-    local function toggleColor(btn)
-        local tkt = btn:FindFirstChild("Ticket_Asset")
-        if not tkt then return end
-        if tkt.ImageColor3 ~= Color3.fromRGB(255, 0, 0) then
-            tkt.ImageColor3 = Color3.fromRGB(255, 0, 0)
-        else
-            tkt.ImageColor3 = Color3.fromRGB(0, 255, 0)
-        end
-    end
+    -- ═══════════════════════════════════════════════════════════
+    -- 14 زر
+    -- ═══════════════════════════════════════════════════════════
+    local flingBtn    = makeBtn("فلنق (Fling)",        15,  150)
+    local viewBtn     = makeBtn("مشاهدة (View)",       205, 150)
+    local bangRevBtn  = makeBtn("بانق عكسي",           15,  190)
+    local bangBtn     = makeBtn("بانق (Bang)",         205, 190)
+    local headSitBtn  = makeBtn("جلوس في راسه",        15,  230)
+    local suckBtn     = makeBtn("تمص (Sucking)",       205, 230)
+    local slapBtn     = makeBtn("ضرب مؤخرة",           15,  270)
+    local headFuckBtn = makeBtn("يمص (HeadFuck)",      205, 270)
+    local backpackBtn = makeBtn("حقيبة ظهر",           15,  310)
+    local jerkBtn     = makeBtn("سوها عليه",           205, 310)
+    local focusBtn    = makeBtn("سماع (Focus)",        15,  350)
+    local repeatBtn   = makeBtn("تقليد الكلام",        205, 350)
+    local tpBtn       = makeBtn("تنقل (Teleport)",     15,  390)
+    local clickToolBtn= makeBtn("اداة الاختيار",       205, 390)
 
-    local function isActive(btn)
-        local tkt = btn:FindFirstChild("Ticket_Asset")
-        return tkt and tkt.ImageColor3 == Color3.fromRGB(0, 255, 0)
-    end
-
-    -- ─── 14 أزرار ───
-    local flingBtn    = makeActionButton("فلنق (Fling)",       15,  155)
-    local viewBtn     = makeActionButton("مشاهدة (View)",      205, 155)
-    local bangRevBtn  = makeActionButton("بانق عكسي (Reverse)",15,  195)
-    local bangBtn     = makeActionButton("بانق (Bang)",        205, 195)
-    local headSitBtn  = makeActionButton("جلوس في راسه",       15,  235)
-    local suckingBtn  = makeActionButton("تمص (Sucking)",      205, 235)
-    local assSlapBtn  = makeActionButton("ضرب مؤخرة",          15,  275)
-    local headFuckBtn = makeActionButton("يمص (HeadFuck)",     205, 275)
-    local backpackBtn = makeActionButton("حقيبة ظهر",          15,  315)
-    local jerkBtn     = makeActionButton("سوها عليه",          205, 315)
-    local focusBtn    = makeActionButton("سماع (Focus)",       15,  355)
-    local repeatBtn   = makeActionButton("تقليد الكلام",       205, 355)
-    local tpBtn       = makeActionButton("تنقل (Teleport)",    15,  395)
-    local clickToolBtn= makeActionButton("اداة الاختيار",      205, 395)
-
-    -- ═══ 1. فلنق ═══
+    -- ═══════════════════════════════════════════════════════════
+    -- 1. فلنق
+    -- ═══════════════════════════════════════════════════════════
     flingBtn.MouseButton1Click:Connect(function()
         if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
-        toggleColor(flingBtn)
-        if isActive(flingBtn) then
-            local mH = GetLocalRoot()
-            FlingOriginalPos = mH and mH.CFrame or nil
+        TG_ResetAll(flingBtn)
+        TG_ToggleIndicator(flingBtn)
+        if TG_IsOn(flingBtn) then
+            local root = TG_GetLocalRoot()
+            FlingOldPos = root and root.CFrame or nil
             notify("Fling", "🚀 بدء الفلنق...")
             task.spawn(function()
-                local origFPDH = workspace.FallenPartsDestroyHeight
+                local oldFPDH = workspace.FallenPartsDestroyHeight
                 pcall(function() workspace.FallenPartsDestroyHeight = -math.huge end)
-                while isActive(flingBtn) do
+                while TG_IsOn(flingBtn) do
                     RunService.Heartbeat:Wait()
-                    local tH = GetTargetRoot()
-                    local mH2 = GetLocalRoot()
-                    local mHum = GetLocalHum()
-                    if tH and mH2 and mHum then
-                        mHum:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-                        local sum = tick() * 1000
-                        mH2.CFrame = tH.CFrame * CFrame.new(0, 1.5, 0) * CFrame.Angles(math.rad(sum), 0, math.rad(sum))
-                        mH2.AssemblyLinearVelocity = Vector3.new(9e8, 9e8, 9e8)
-                        mH2.AssemblyAngularVelocity = Vector3.new(9e8, 9e8, 9e8)
+                    local tH = TG_TargetRoot()
+                    local mH = TG_GetLocalRoot()
+                    local mHum = TG_GetLocalHum()
+                    if tH and mH and mHum then
+                        pcall(function() mHum:SetStateEnabled(Enum.HumanoidStateType.Seated, false) end)
+                        local s = tick() * 1000
+                        mH.CFrame = tH.CFrame * CFrame.new(0, 1.5, 0) * CFrame.Angles(math.rad(s), 0, math.rad(s))
+                        mH.AssemblyLinearVelocity = Vector3.new(9e8, 9e8, 9e8)
+                        mH.AssemblyAngularVelocity = Vector3.new(9e8, 9e8, 9e8)
                     else
                         break
                     end
                 end
-                pcall(function() workspace.FallenPartsDestroyHeight = origFPDH end)
-                local mH3 = GetLocalRoot()
-                local mHum2 = GetLocalHum()
-                if mH3 and FlingOriginalPos then
-                    pcall(function() mH3.CFrame = FlingOriginalPos end)
-                end
+                pcall(function() workspace.FallenPartsDestroyHeight = oldFPDH end)
+                local mH2 = TG_GetLocalRoot()
+                local mHum2 = TG_GetLocalHum()
+                if mH2 and FlingOldPos then pcall(function() mH2.CFrame = FlingOldPos end) end
                 if mHum2 then
                     pcall(function()
                         mHum2:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
@@ -1590,88 +1620,85 @@ do
                     end)
                 end
             end)
-        else
-            local mH = GetLocalRoot()
-            local mHum = GetLocalHum()
-            if mH and FlingOriginalPos then
-                pcall(function() mH.CFrame = FlingOriginalPos end)
-            end
-            if mHum then
-                pcall(function()
-                    mHum:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
-                    mHum:ChangeState(Enum.HumanoidStateType.GettingUp)
-                end)
-            end
         end
     end)
 
-    -- ═══ 2. مشاهدة ═══
+    -- ═══════════════════════════════════════════════════════════
+    -- 2. مشاهدة
+    -- ═══════════════════════════════════════════════════════════
     viewBtn.MouseButton1Click:Connect(function()
         if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
-        toggleColor(viewBtn)
-        if isActive(viewBtn) then
+        TG_ResetAll(viewBtn)
+        TG_ToggleIndicator(viewBtn)
+        if TG_IsOn(viewBtn) then
             task.spawn(function()
-                while isActive(viewBtn) do
+                while TG_IsOn(viewBtn) do
                     RunService.Heartbeat:Wait()
-                    local tHum = GetTargetHum()
+                    local tHum = TG_TargetHum()
                     if tHum then
                         workspace.CurrentCamera.CameraSubject = tHum
                     else
                         break
                     end
                 end
-                local mHum = GetLocalHum()
+                local mHum = TG_GetLocalHum()
                 if mHum then workspace.CurrentCamera.CameraSubject = mHum end
             end)
         else
-            local mHum = GetLocalHum()
+            local mHum = TG_GetLocalHum()
             if mHum then workspace.CurrentCamera.CameraSubject = mHum end
         end
     end)
 
-    -- ═══ 3. بانق عكسي ═══
+    -- ═══════════════════════════════════════════════════════════
+    -- 3. بانق عكسي
+    -- ═══════════════════════════════════════════════════════════
     bangRevBtn.MouseButton1Click:Connect(function()
         if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
-        toggleColor(bangRevBtn)
-        if isActive(bangRevBtn) then
+        TG_ResetAll(bangRevBtn)
+        TG_ToggleIndicator(bangRevBtn)
+        if TG_IsOn(bangRevBtn) then
             task.spawn(function()
-                local sum, step, yOffset = -2, 0.15, -1
-                while isActive(bangRevBtn) do
+                local s, step, yOff = -2, 0.15, -1
+                while TG_IsOn(bangRevBtn) do
                     RunService.Heartbeat:Wait()
-                    local tChar = GetTargetChar()
-                    local mH = GetLocalRoot()
-                    local mHum = GetLocalHum()
+                    local tChar = CurrentTarget.Character
+                    local mH = TG_GetLocalRoot()
+                    local mHum = TG_GetLocalHum()
                     if tChar and mH and mHum then
                         local torso = tChar:FindFirstChild("Torso") or tChar:FindFirstChild("UpperTorso")
                         if torso then
-                            if torso.Name == "Torso" then yOffset = -0.75 end
+                            if torso.Name == "Torso" then yOff = -0.75 end
                             mHum.Sit = true
-                            mH.CFrame = torso.CFrame * CFrame.new(0, yOffset, sum) * CFrame.Angles(math.rad(270), 0, 0)
+                            mH.CFrame = torso.CFrame * CFrame.new(0, yOff, s) * CFrame.Angles(math.rad(270), 0, 0)
                             mH.AssemblyLinearVelocity = Vector3.zero
-                            sum = sum + step
-                            if sum >= -1 or sum <= -2 then step = -step end
+                            s = s + step
+                            if s >= -1 or s <= -2 then step = -step end
                         end
                     else
                         break
                     end
                 end
-                local mHum2 = GetLocalHum()
+                local mHum2 = TG_GetLocalHum()
                 if mHum2 then mHum2.Sit = false end
             end)
         end
     end)
 
-    -- ═══ 4. بانق ═══
+    -- ═══════════════════════════════════════════════════════════
+    -- 4. بانق
+    -- ═══════════════════════════════════════════════════════════
     bangBtn.MouseButton1Click:Connect(function()
         if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
-        toggleColor(bangBtn)
-        if isActive(bangBtn) then
+        TG_ResetAll(bangBtn)
+        TG_ToggleIndicator(bangBtn)
+        if TG_IsOn(bangBtn) then
             task.spawn(function()
-                while isActive(bangBtn) do
+                while TG_IsOn(bangBtn) do
                     RunService.Heartbeat:Wait()
-                    local tChar = GetTargetChar()
-                    local mH = GetLocalRoot()
-                    local mHum = GetLocalHum()
+                    local tChar = CurrentTarget.Character
+                    local mH = TG_GetLocalRoot()
+                    local mHum = TG_GetLocalHum()
                     if tChar and mH and mHum then
                         local torso = tChar:FindFirstChild("Torso") or tChar:FindFirstChild("UpperTorso")
                         if torso then
@@ -1679,32 +1706,35 @@ do
                             mH.CFrame = torso.CFrame * CFrame.new(0, 0, 1)
                             mH.AssemblyLinearVelocity = Vector3.zero
                             if mHum.RigType == Enum.HumanoidRigType.R15 then
-                                playAnimById("5918726674", 2)
+                                TG_PlayAnim("5918726674", 2)
                             else
-                                playAnimById("148840371", 2.5)
+                                TG_PlayAnim("148840371", 2.5)
                             end
                         end
                     else
                         break
                     end
                 end
-                local mHum2 = GetLocalHum()
+                local mHum2 = TG_GetLocalHum()
                 if mHum2 then mHum2.Sit = false end
             end)
         end
     end)
 
-    -- ═══ 5. جلوس في راسه ═══
+    -- ═══════════════════════════════════════════════════════════
+    -- 5. جلوس في راسه
+    -- ═══════════════════════════════════════════════════════════
     headSitBtn.MouseButton1Click:Connect(function()
         if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
-        toggleColor(headSitBtn)
-        if isActive(headSitBtn) then
+        TG_ResetAll(headSitBtn)
+        TG_ToggleIndicator(headSitBtn)
+        if TG_IsOn(headSitBtn) then
             task.spawn(function()
-                while isActive(headSitBtn) do
+                while TG_IsOn(headSitBtn) do
                     RunService.Heartbeat:Wait()
-                    local tChar = GetTargetChar()
-                    local mH = GetLocalRoot()
-                    local mHum = GetLocalHum()
+                    local tChar = CurrentTarget.Character
+                    local mH = TG_GetLocalRoot()
+                    local mHum = TG_GetLocalHum()
                     if tChar and tChar:FindFirstChild("Head") and mH and mHum then
                         mHum.Sit = true
                         mH.CFrame = tChar.Head.CFrame * CFrame.new(0, 2, 0)
@@ -1713,65 +1743,71 @@ do
                         break
                     end
                 end
-                local mHum2 = GetLocalHum()
+                local mHum2 = TG_GetLocalHum()
                 if mHum2 then mHum2.Sit = false end
             end)
         end
     end)
 
-    -- ═══ 6. تمص ═══
-    suckingBtn.MouseButton1Click:Connect(function()
+    -- ═══════════════════════════════════════════════════════════
+    -- 6. تمص
+    -- ═══════════════════════════════════════════════════════════
+    suckBtn.MouseButton1Click:Connect(function()
         if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
-        toggleColor(suckingBtn)
-        if isActive(suckingBtn) then
+        TG_ResetAll(suckBtn)
+        TG_ToggleIndicator(suckBtn)
+        if TG_IsOn(suckBtn) then
             task.spawn(function()
-                local sum, step = -2, 0.15
-                while isActive(suckingBtn) do
+                local s, step = -2, 0.15
+                while TG_IsOn(suckBtn) do
                     RunService.Heartbeat:Wait()
-                    local tChar = GetTargetChar()
-                    local mH = GetLocalRoot()
-                    local mHum = GetLocalHum()
+                    local tChar = CurrentTarget.Character
+                    local mH = TG_GetLocalRoot()
+                    local mHum = TG_GetLocalHum()
                     if tChar and mH and mHum then
                         local torso = tChar:FindFirstChild("Torso") or tChar:FindFirstChild("UpperTorso")
                         if torso then
                             mHum.Sit = true
-                            mH.CFrame = torso.CFrame * CFrame.new(0, -2.4, sum) * CFrame.Angles(0, math.rad(180), 0)
+                            mH.CFrame = torso.CFrame * CFrame.new(0, -2.4, s) * CFrame.Angles(0, math.rad(180), 0)
                             mH.AssemblyLinearVelocity = Vector3.zero
-                            sum = sum + step
-                            if sum >= -1 or sum <= -2 then step = -step end
+                            s = s + step
+                            if s >= -1 or s <= -2 then step = -step end
                         end
                     else
                         break
                     end
                 end
-                local mHum2 = GetLocalHum()
+                local mHum2 = TG_GetLocalHum()
                 if mHum2 then mHum2.Sit = false end
             end)
         end
     end)
 
-    -- ═══ 7. ضرب مؤخرة ═══
-    assSlapBtn.MouseButton1Click:Connect(function()
+    -- ═══════════════════════════════════════════════════════════
+    -- 7. ضرب مؤخرة (R15 فقط)
+    -- ═══════════════════════════════════════════════════════════
+    slapBtn.MouseButton1Click:Connect(function()
         if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
-        local mHum = GetLocalHum()
+        local mHum = TG_GetLocalHum()
         if not mHum or mHum.RigType ~= Enum.HumanoidRigType.R15 then
             notify("AssSlap", "يجب أن تكون R15")
             return
         end
-        toggleColor(assSlapBtn)
-        if isActive(assSlapBtn) then
+        TG_ResetAll(slapBtn)
+        TG_ToggleIndicator(slapBtn)
+        if TG_IsOn(slapBtn) then
             task.spawn(function()
-                while isActive(assSlapBtn) do
-                    playAnimById("16302986", 1, 16)
+                while TG_IsOn(slapBtn) do
+                    TG_PlayAnim("16302986", 1, 16)
                     task.wait(1)
                 end
             end)
             task.spawn(function()
-                while isActive(assSlapBtn) do
+                while TG_IsOn(slapBtn) do
                     RunService.Heartbeat:Wait()
-                    local tChar = GetTargetChar()
-                    local mH = GetLocalRoot()
-                    local mHum2 = GetLocalHum()
+                    local tChar = CurrentTarget.Character
+                    local mH = TG_GetLocalRoot()
+                    local mHum2 = TG_GetLocalHum()
                     if tChar and mH and mHum2 then
                         local torso = tChar:FindFirstChild("Torso") or tChar:FindFirstChild("UpperTorso")
                         if torso then
@@ -1783,51 +1819,58 @@ do
                         break
                     end
                 end
-                local mHum3 = GetLocalHum()
+                local mHum3 = TG_GetLocalHum()
                 if mHum3 then mHum3.Sit = false end
+                TG_StopAnim()
             end)
         end
     end)
 
-    -- ═══ 8. يمص ═══
+    -- ═══════════════════════════════════════════════════════════
+    -- 8. يمص (HeadFuck)
+    -- ═══════════════════════════════════════════════════════════
     headFuckBtn.MouseButton1Click:Connect(function()
         if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
-        toggleColor(headFuckBtn)
-        if isActive(headFuckBtn) then
+        TG_ResetAll(headFuckBtn)
+        TG_ToggleIndicator(headFuckBtn)
+        if TG_IsOn(headFuckBtn) then
             task.spawn(function()
-                local sum, step = -2, 0.3
-                while isActive(headFuckBtn) do
+                local s, step = -2, 0.3
+                while TG_IsOn(headFuckBtn) do
                     task.wait(0.01)
-                    local tChar = GetTargetChar()
-                    local mH = GetLocalRoot()
-                    local mHum = GetLocalHum()
+                    local tChar = CurrentTarget.Character
+                    local mH = TG_GetLocalRoot()
+                    local mHum = TG_GetLocalHum()
                     if tChar and tChar:FindFirstChild("Head") and mH and mHum then
                         mHum.Sit = true
-                        mH.CFrame = tChar.Head.CFrame * CFrame.new(0, 0.7, sum) * CFrame.Angles(0, math.rad(180), 0)
+                        mH.CFrame = tChar.Head.CFrame * CFrame.new(0, 0.7, s) * CFrame.Angles(0, math.rad(180), 0)
                         mH.AssemblyLinearVelocity = Vector3.zero
-                        sum = sum + step
-                        if sum >= -1 or sum <= -2 then step = -step end
+                        s = s + step
+                        if s >= -1 or s <= -2 then step = -step end
                     else
                         break
                     end
                 end
-                local mHum2 = GetLocalHum()
+                local mHum2 = TG_GetLocalHum()
                 if mHum2 then mHum2.Sit = false end
             end)
         end
     end)
 
-    -- ═══ 9. حقيبة ظهر ═══
+    -- ═══════════════════════════════════════════════════════════
+    -- 9. حقيبة ظهر
+    -- ═══════════════════════════════════════════════════════════
     backpackBtn.MouseButton1Click:Connect(function()
         if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
-        toggleColor(backpackBtn)
-        if isActive(backpackBtn) then
+        TG_ResetAll(backpackBtn)
+        TG_ToggleIndicator(backpackBtn)
+        if TG_IsOn(backpackBtn) then
             task.spawn(function()
-                while isActive(backpackBtn) do
+                while TG_IsOn(backpackBtn) do
                     RunService.Heartbeat:Wait()
-                    local tH = GetTargetRoot()
-                    local mH = GetLocalRoot()
-                    local mHum = GetLocalHum()
+                    local tH = TG_TargetRoot()
+                    local mH = TG_GetLocalRoot()
+                    local mHum = TG_GetLocalHum()
                     if tH and mH and mHum then
                         mHum.Sit = true
                         mH.CFrame = tH.CFrame * CFrame.new(0, 0, 1.2) * CFrame.Angles(0, -3, 0)
@@ -1836,35 +1879,38 @@ do
                         break
                     end
                 end
-                local mHum2 = GetLocalHum()
+                local mHum2 = TG_GetLocalHum()
                 if mHum2 then mHum2.Sit = false end
             end)
         end
     end)
 
-    -- ═══ 10. سوها عليه ═══
+    -- ═══════════════════════════════════════════════════════════
+    -- 10. سوها عليه
+    -- ═══════════════════════════════════════════════════════════
     jerkBtn.MouseButton1Click:Connect(function()
         if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
-        toggleColor(jerkBtn)
-        if isActive(jerkBtn) then
+        TG_ResetAll(jerkBtn)
+        TG_ToggleIndicator(jerkBtn)
+        if TG_IsOn(jerkBtn) then
             task.spawn(function()
-                while isActive(jerkBtn) do
-                    local mHum = GetLocalHum()
+                while TG_IsOn(jerkBtn) do
+                    local mHum = TG_GetLocalHum()
                     if mHum and mHum.RigType == Enum.HumanoidRigType.R15 then
-                        playAnimById("698251653", 0.4, 0.6)
+                        TG_PlayAnim("698251653", 0.4, 0.6)
                         task.wait(0.16)
                     else
-                        playAnimById("72042024", 1, 0.675)
+                        TG_PlayAnim("72042024", 1, 0.675)
                         task.wait(0.4)
                     end
                 end
             end)
             task.spawn(function()
-                while isActive(jerkBtn) do
+                while TG_IsOn(jerkBtn) do
                     RunService.Heartbeat:Wait()
-                    local tH = GetTargetRoot()
-                    local mH = GetLocalRoot()
-                    local mHum = GetLocalHum()
+                    local tH = TG_TargetRoot()
+                    local mH = TG_GetLocalRoot()
+                    local mHum = TG_GetLocalHum()
                     if tH and mH and mHum then
                         mHum.Sit = true
                         mH.CFrame = tH.CFrame * CFrame.new(0, 1, -3) * CFrame.Angles(0, math.pi, 0)
@@ -1873,35 +1919,39 @@ do
                         break
                     end
                 end
-                local mHum2 = GetLocalHum()
+                local mHum2 = TG_GetLocalHum()
                 if mHum2 then mHum2.Sit = false end
+                TG_StopAnim()
             end)
         end
     end)
 
-    -- ═══ 11. سماع ═══
+    -- ═══════════════════════════════════════════════════════════
+    -- 11. سماع (Focus)
+    -- ═══════════════════════════════════════════════════════════
     focusBtn.MouseButton1Click:Connect(function()
         if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
-        toggleColor(focusBtn)
-        if isActive(focusBtn) then
-            local mH0 = GetLocalRoot()
-            local oldPos = mH0 and mH0.Position or nil
+        TG_ResetAll(focusBtn)
+        TG_ToggleIndicator(focusBtn)
+        if TG_IsOn(focusBtn) then
+            local r0 = TG_GetLocalRoot()
+            local oldPos = r0 and r0.Position or nil
             task.spawn(function()
-                while isActive(focusBtn) do
+                while TG_IsOn(focusBtn) do
                     RunService.Heartbeat:Wait()
-                    local tChar = GetTargetChar()
-                    local mH = GetLocalRoot()
+                    local tChar = CurrentTarget.Character
+                    local mH = TG_GetLocalRoot()
                     if tChar and tChar:FindFirstChild("Head") and mH then
                         mH.CFrame = tChar.Head.CFrame * CFrame.new(0, -20, 0) * CFrame.Angles(math.rad(180), 0, 0)
-                        local tHum = GetTargetHum()
+                        local tHum = TG_TargetHum()
                         if tHum then workspace.CurrentCamera.CameraSubject = tHum end
                     else
                         break
                     end
                 end
-                local mH2 = GetLocalRoot()
+                local mH2 = TG_GetLocalRoot()
                 if mH2 and oldPos then pcall(function() mH2.CFrame = CFrame.new(oldPos) end) end
-                local mHum = GetLocalHum()
+                local mHum = TG_GetLocalHum()
                 if mHum then
                     workspace.CurrentCamera.CameraSubject = mHum
                     pcall(function() mHum:ChangeState(Enum.HumanoidStateType.GettingUp) end)
@@ -1910,15 +1960,18 @@ do
         end
     end)
 
-    -- ═══ 12. تقليد الكلام ═══
+    -- ═══════════════════════════════════════════════════════════
+    -- 12. تقليد الكلام
+    -- ═══════════════════════════════════════════════════════════
     repeatBtn.MouseButton1Click:Connect(function()
         if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
-        toggleColor(repeatBtn)
-        if isActive(repeatBtn) then
+        TG_ResetAll(repeatBtn)
+        TG_ToggleIndicator(repeatBtn)
+        if TG_IsOn(repeatBtn) then
             if TalkRepeater then pcall(function() TalkRepeater:Disconnect() end) end
-            local targetUserId = CurrentTarget.UserId
+            local tid = CurrentTarget.UserId
             TalkRepeater = game:GetService("TextChatService").MessageReceived:Connect(function(msg)
-                if msg.TextSource and msg.TextSource.UserId == targetUserId then
+                if msg.TextSource and msg.TextSource.UserId == tid then
                     sendChatText(msg.Text)
                 end
             end)
@@ -1930,11 +1983,13 @@ do
         end
     end)
 
-    -- ═══ 13. تنقل ═══
+    -- ═══════════════════════════════════════════════════════════
+    -- 13. تنقل
+    -- ═══════════════════════════════════════════════════════════
     tpBtn.MouseButton1Click:Connect(function()
         if not CurrentTarget then notify("Target", "❌ حدد ضحية أولاً!") return end
-        local mH = GetLocalRoot()
-        local tH = GetTargetRoot()
+        local mH = TG_GetLocalRoot()
+        local tH = TG_TargetRoot()
         if mH and tH then
             pcall(function() mH.CFrame = tH.CFrame end)
             notify("Target", "✅ تم التنقل")
@@ -1943,8 +1998,10 @@ do
         end
     end)
 
-    -- ═══ 14. أداة الاختيار ═══
-    local function addClickTool()
+    -- ═══════════════════════════════════════════════════════════
+    -- 14. أداة الاختيار
+    -- ═══════════════════════════════════════════════════════════
+    local function addPickTool()
         pcall(function()
             local bp = player:FindFirstChild("Backpack")
             if bp then
@@ -1967,59 +2024,63 @@ do
                     elseif target.Parent:IsA("Accessory") then
                         plr = Players:GetPlayerFromCharacter(target.Parent.Parent)
                     end
-                    if plr and plr ~= player then
-                        UpdateTarget(plr)
-                    end
+                    if plr and plr ~= player then UpdateTarget(plr) end
                 end
             end)
             tool.Parent = bp or player
         end)
-        notify("ClickTarget", "✅ أضفنا أداة الاختيار في الحقيبة")
+        notify("ClickTarget", "✅ تمت الإضافة في الحقيبة")
     end
+    clickToolBtn.MouseButton1Click:Connect(addPickTool)
+    pickToolBtn.MouseButton1Click:Connect(addPickTool)
 
-    clickToolBtn.MouseButton1Click:Connect(addClickTool)
-    clickTgtBtn.MouseButton1Click:Connect(addClickTool)
-
-    -- ─── البحث ───
-    tInp.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            local q = tInp.Text:gsub("^%s+", ""):gsub("%s+$", "")
-            if q == "" then return end
-            local lq = string.lower(q)
-            local found
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= player and (
-                    string.find(string.lower(p.Name), lq, 1, true) or
-                    string.find(string.lower(p.DisplayName), lq, 1, true)
-                ) then
-                    found = p
-                    break
-                end
-            end
-            if found then
-                UpdateTarget(found)
-            else
-                notify("Target", "❌ لم يتم العثور على اللاعب")
+    -- ═══════════════════════════════════════════════════════════
+    -- البحث بالكتابة
+    -- ═══════════════════════════════════════════════════════════
+    tInp.FocusLost:Connect(function(enter)
+        if not enter then return end
+        local q = tInp.Text:gsub("^%s+", ""):gsub("%s+$", "")
+        if q == "" then return end
+        local lq = string.lower(q)
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= player and (
+                string.find(string.lower(p.Name), lq, 1, true) or
+                string.find(string.lower(p.DisplayName), lq, 1, true)
+            ) then
+                UpdateTarget(p)
+                return
             end
         end
+        notify("Target", "❌ لم يتم العثور على اللاعب")
     end)
 
-    -- ─── خروج الهدف ───
+    -- ═══════════════════════════════════════════════════════════
+    -- استهداف مباشر عند وضع الاسم + Enter
+    -- ═══════════════════════════════════════════════════════════
+    tInp.FocusLost:Connect(function()
+        local q = tInp.Text
+        if q == "" or q == "@target..." then return end
+        local p = Players:FindFirstChild(q)
+        if p and p ~= player then UpdateTarget(p) end
+    end)
+
+    -- ═══════════════════════════════════════════════════════════
+    -- إزالة تلقائية للهدف عند خروجه
+    -- ═══════════════════════════════════════════════════════════
     Players.PlayerRemoving:Connect(function(p)
-        if CurrentTarget and p == CurrentTarget then
-            notify("Target", "🚪 الضحية خرجت من السيرفر")
+        if CurrentTarget == p then
+            notify("Target", "🚪 الضحية خرجت")
             UpdateTarget(nil)
         end
     end)
 
-    -- ─── تنظيف ───
+    -- تنظيف
     if gui and gui.Destroying then
         gui.Destroying:Connect(function()
             if TalkRepeater then pcall(function() TalkRepeater:Disconnect() end) end
         end)
     end
-end
--- ========== TRO ANTI LAUNCHER ==========
+end-- ========== TRO ANTI LAUNCHER ==========
 local troAntiLoaded = false
 local playerGui = player:FindFirstChildOfClass("PlayerGui") or player:WaitForChild("PlayerGui")
 local function launchTROAnti()
